@@ -14,5 +14,7 @@ Allow live composition of classic tweens, circle tweens, SVG Path tweens, other 
 - More usability & interpolations helpers
 - ES7 updates
 
+### License ?
 
+AGPL license
 
