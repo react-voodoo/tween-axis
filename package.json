@@ -1,5 +1,5 @@
 {
-  "name": "scopeline",
+  "name": "caipi-scopeline",
   "version": "1.0.0",
   "description": "Scalable, multiscope, reversible interpolation/tweening engine",
   "repository": "https://github.com/CaipiLabs/caipi-scopeline",
