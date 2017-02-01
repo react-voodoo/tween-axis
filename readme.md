@@ -11,8 +11,9 @@ Scalable, multiscope, reversible, delta based, interpolation/tweening engine
 - Work in node & webpack environment
 
 ### Todo :
+
 - Nice examples 
-- Doc
+- Doc & clean
 - Usability & interpolations helpers ?
 - ES7 updates
 

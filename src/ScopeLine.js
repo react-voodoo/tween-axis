@@ -1,3 +1,20 @@
+/**
+ * # Caipi ScopeLine
+ *
+ * Scalable, multiscope, reversible, delta based, interpolation/tweening engine
+ *
+ * ## Scopeline what ?
+ *
+ * - Tweening engine allowing to apply forward and backward multiples tweens on same properties and multiple objects
+ * - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other Scopelines, etc
+ * - Equivalent to the GreenSocks TweenMax/TweenLite objects, minus specialized helpers.
+ * - Purely Abstract, no Dom deps, Scopeline don't apply the CSS itself
+ * - Work in node & webpack environment
+ *
+ * @author Nathanael BRAUN
+ * @contact caipilabs@gmail.com
+ * @licence AGPL-3.0
+ */
 var
     isArray         = require('isarray'),
     isFunction      = require('isfunction'),
@@ -17,53 +34,51 @@ var
         this.__incoming      = [];
     },
     // runner
-    _live           = false, lastTm,
-    _running        = [],
-    Runner          =
-        {
-            run   : function ( tl, ctx, ln, cb ) {
-                _running.push([tl, ctx, ln, 0, {}, cb]);
-                tl.go(0, ctx, true);//reset tl
+    _live           = false,
+    lastTm,
+    _running        = [];
 
-                if ( !_live ) {
-                    _live  = true;
-                    lastTm = Date.now();
-                    console.log("TL runner On");
-                    setTimeout(this._tick, 16);
-                }
-            },
-            _tick : function _tick() {
-                var i = 0, o, tm = Date.now(), delta = tm - lastTm;
-                lastTm                               = tm;
-                for ( ; i < _running.length ; i++ ) {
-                    _running[i][3] = Math.min(delta + _running[i][3], _running[i][2]);//cpos
-                    _running[i][0].go(
-                        _running[i][3] / _running[i][2],
-                        _running[i][1]
-                    );
-                    // console.log("TL runner ",_running[i][3]);
-                    if ( _running[i][3] == _running[i][2] ) {
+export default class ScopeLine {
 
-                        _running[i][5] && setTimeout(_running[i][5]);
-                        _running.splice(i, 1), i--;
-                    }
+    static Runner = {
+        run   : function ( tl, ctx, ln, cb ) {
+            _running.push([tl, ctx, ln, 0, {}, cb]);
+            tl.go(0, ctx, true);//reset tl
 
-                }
-                if ( _running.length )
-                    setTimeout(_tick, 16);
-                else {
-                    console.log("TL runner Off");
-                    _live = false;
-                }
+            if ( !_live ) {
+                _live  = true;
+                lastTm = Date.now();
+                // console.log("TL runner On");
+                setTimeout(this._tick, 16);
             }
-        };
+        },
+        _tick : function _tick() {
+            var i  = 0, o, tm = Date.now(), delta = tm - lastTm;
+            lastTm = tm;
+            for ( ; i < _running.length ; i++ ) {
+                _running[i][3] = Math.min(delta + _running[i][3], _running[i][2]);//cpos
+                _running[i][0].go(
+                    _running[i][3] / _running[i][2],
+                    _running[i][1]
+                );
+                // console.log("TL runner ",_running[i][3]);
+                if ( _running[i][3] == _running[i][2] ) {
 
-var ScopeLine = module.exports = function ScopeLine( cfg, scope ) {
-    this.init(cfg, scope)
-};
+                    _running[i][5] && setTimeout(_running[i][5]);
+                    _running.splice(i, 1), i--;
+                }
 
-ScopeLine.prototype = {
-    init       : function ( cfg, scope ) {
+            }
+            if ( _running.length )
+                setTimeout(_tick, 16);
+            else {
+                // console.log("TL runner Off");
+                _live = false;
+            }
+        }
+    };
+
+    constructor( cfg, scope ) {
         var me             = this;
         this.scope         = scope;
         cfg                = cfg || {};
@@ -90,16 +105,18 @@ ScopeLine.prototype = {
             if ( cfg.scopeline )
                 this.mount(cfg.scopeline, scope);
         }
-    },
-    run        : function ( target, cb, tm ) {
-        Runner.run(this, target, tm || this.duration, cb);
-    },
+    }
+
+    run( target, cb, tm ) {
+        ScopeLine.Runner.run(this, target, tm || this.duration, cb);
+    }
+
     /**
      * Map process descriptors to get a runnable timeline
      * @method mount
      * @param map
      */
-    mount      : function ( map, scope ) {
+    mount( map, scope ) {
         var i, ln, d = this.duration || 0, p = 0, me = this, max = 0, factory;
         for ( i = 0, ln = map.length ; i < ln ; i++ ) {
             if ( isString(map[i].easingFn) )
@@ -126,7 +143,8 @@ ScopeLine.prototype = {
 
         this.duration = d = Math.max(d, max);
         return this;
-    },
+    }
+
     /**
      * Clone this scopeline
      * @method fork
@@ -135,11 +153,12 @@ ScopeLine.prototype = {
      * @param easeFn
      * @returns {forkedScopeline}
      */
-    fork       : function ( cfg ) {
+    fork( cfg ) {
         this._masterLine          = this._masterLine || this;
         forkedScopeline.prototype = this._masterLine;
         return new forkedScopeline(cfg);
-    },
+    }
+
     /**
      * Map a process descriptor
      * @method addProcess
@@ -149,7 +168,7 @@ ScopeLine.prototype = {
      * @param cfg
      * @returns {number}
      */
-    addProcess : function ( from, to, process, cfg ) {
+    addProcess( from, to, process, cfg ) {
         var i    = 0,
             _ln  = process.localLength,
             ln   = (to - from) || 0,
@@ -174,16 +193,18 @@ ScopeLine.prototype = {
         this.__marks.splice(i, 0, to);
         this.__marksKeys.splice(i, 0, -key);
         return this;
-    },
+    }
+
     /**
      *
      * @param key
      * @returns {*}
      * @private
      */
-    _getIndex  : function ( key ) {
+    _getIndex( key ) {
         return (key = this.__marksKeys.indexOf(key)) !== -1 ? key : false;
-    },
+    }
+
     /**
      * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
      * using a scopeline length of 1
@@ -192,12 +213,13 @@ ScopeLine.prototype = {
      * @param scope
      * @param reset
      */
-    go         : function ( to, scope, reset ) {
+    go( to, scope, reset ) {
         this.goTo(to * this.duration, scope, reset);
         this.__cRPos = to;
         return scope || this.scope;
-    },
-    getPosAt   : function ( to, scope ) {
+    }
+
+    getPosAt( to, scope ) {
 
         this.__activeProcess.length = 0;
         this.__outgoing.length      = 0;
@@ -205,7 +227,7 @@ ScopeLine.prototype = {
         this.__cPos                 = 0;
         this.__cIndex               = 0;
         return this.go(to, scope);
-    },
+    }
 
     /**
      * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
@@ -215,7 +237,7 @@ ScopeLine.prototype = {
      * @param scope
      * @param reset
      */
-    goTo : function ( to, scope, reset ) {
+    goTo( to, scope, reset ) {
         scope = scope || this.scope;
         if ( this.window )
             to = this.window.start + (to / this.duration) * this.window.length;
@@ -466,6 +488,5 @@ ScopeLine.prototype = {
 
 
 }
-;
 
 
