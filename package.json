@@ -1,13 +1,12 @@
 {
   "name": "@caipi-labs/scopeline",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <caipilabs@gmail.com>",
   "description": "Scalable, multiscope, reversible interpolation/tweening engine",
   "repository": "https://github.com/CaipiLabs/caipi-scopeline",
-
-  "publishConfig" : {
-    "registry":"http://npm.caipilabs.com"
+  "publishConfig": {
+    "registry": "http://npm.caipilabs.com"
   },
   "main": "dist/ScopeLine.js",
   "scripts": {
