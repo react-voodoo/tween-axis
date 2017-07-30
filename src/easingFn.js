@@ -1,4 +1,11 @@
 
+/*
+ * Copyright (c) 2017.  Nathanael Braun
+ * @author : Nathanael Braun
+ * @contact : caipilabs@gmail.com
+ * See /LICENCE.MD
+ */
+
 module.exports={
     // t: current time, b: begInnIng value, c: change In value, d: duration
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2017.  Nathanael Braun
+ * @author : Nathanael Braun
+ * @contact : caipilabs@gmail.com
+ * See /LICENCE.MD
+ */
+
 var cache = {}, buildPath, getPoint;
 if ( typeof document == "undefined" ) {
     buildPath = function ( P ) {
