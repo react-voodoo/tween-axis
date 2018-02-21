@@ -6,7 +6,7 @@ Scalable, multiscope, reversible, delta based, interpolation/tweening engine
 
 - Tweening engine allowing to apply forward and backward multiples tweens on same properties and multiple objects 
 - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other Scopelines, etc
-- Allow frame pre-generation, convert svg path to gps path, ... solve many special problems
+- Allow frame pre-generation, convert svg path to/from gps path, ... solve many esotheric problems
 - Purely Abstract, no Dom deps, Scopeline don't apply the CSS itself
 - Work in node & webpack environment
 
