@@ -1,10 +1,10 @@
 {
   "name": "rtween",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <caipilabs@gmail.com>",
-  "description": "Scalable, multiscope, reversible composition / tweening engine",
-  "repository": "https://github.com/CaipiLabs/caipi-scopeline",
+  "description": "Fast, scalable, multiscope, reversible, delta based, tween composition engine",
+  "repository": "https://github.com/CaipiLabs/rTween",
   "publishConfig": {
     "registry": "http://npm.caipilabs.com"
   },
