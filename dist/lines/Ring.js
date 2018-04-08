@@ -1,3 +1,5 @@
+'use strict';
+
 /*
  * Copyright (c) 2017.  Caipi Labs.  All rights reserved.
  *
@@ -17,10 +19,8 @@
  * @contact : caipilabs@gmail.com
  */
 
-'use strict';
-
 var PI = Math.PI,
-    isNumber = require('isnumber'),
+    isNumber = require('is').number,
     sin = Math.sin,
     cos = Math.cos;
 

@@ -1,23 +1,19 @@
 {
-  "name": "@caipi-labs/scopeline",
+  "name": "rtween",
   "version": "1.0.3",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <caipilabs@gmail.com>",
-  "description": "Scalable, multiscope, reversible interpolation/tweening engine",
+  "description": "Scalable, multiscope, reversible composition / tweening engine",
   "repository": "https://github.com/CaipiLabs/caipi-scopeline",
   "publishConfig": {
     "registry": "http://npm.caipilabs.com"
   },
-  "main": "dist/ScopeLine.js",
+  "main": "dist/rTween.js",
   "scripts": {
     "build": "babel src -d dist"
   },
   "dependencies": {
-    "isarray": "0.0.1",
-    "isfunction": "0.0.6",
-    "isnumber": "^1.0.0",
-    "isobject": "^2.0.0",
-    "isstring": "^1.0.6",
+    "is": "^3.2.1",
     "merge": "^1.2.0",
     "point-at-length": "^1.0.1"
   },

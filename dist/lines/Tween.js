@@ -1,3 +1,5 @@
+"use strict";
+
 /*
  * Copyright (c) 2017.  Caipi Labs.  All rights reserved.
  *
@@ -16,8 +18,6 @@
  * @author : Nathanael Braun
  * @contact : caipilabs@gmail.com
  */
-
-"use strict";
 
 module.exports = function (_scope, cfg, target) {
     var fn = "";

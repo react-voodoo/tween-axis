@@ -1,3 +1,5 @@
+"use strict";
+
 /*
  * Copyright (c) 2017.  Caipi Labs.  All rights reserved.
  *
@@ -17,10 +19,8 @@
  * @contact : caipilabs@gmail.com
  */
 
-"use strict";
-
 module.exports = function (cfg) {
-                     // factory
-                     var r = function r(p, u, s) {};
-                     return r;
+  // factory
+  var r = function r(p, u, s) {};
+  return r;
 };

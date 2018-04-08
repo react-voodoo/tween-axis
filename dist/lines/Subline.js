@@ -1,3 +1,5 @@
+"use strict";
+
 /*
  * Copyright (c) 2017.  Caipi Labs.  All rights reserved.
  *
@@ -12,14 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *  This project is dual licensed under AGPL and Commercial Licence.
- *  
+ *
  * @author : Nathanael Braun
  * @contact : caipilabs@gmail.com
  */
 
-"use strict";
-
 module.export = function (cfg) {
 
-             return function (p, u, s, cfg, target) {};
+  return function (p, u, s, cfg, target) {};
 };

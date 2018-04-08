@@ -1,3 +1,13 @@
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 /*
  * Copyright (c) 2017.  Caipi Labs.  All rights reserved.
  *
@@ -17,42 +27,36 @@
  * @contact : caipilabs@gmail.com
  */
 
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 /**
- * # Caipi ScopeLine
+ * # Caipi rTween
  *
  * Scalable, multiscope, reversible, delta based, interpolation/tweening engine
  *
- * ## Scopeline what ?
+ * ## rTween what ?
  *
- * - Tweening engine allowing to apply forward and backward multiples tweens on same properties and multiple objects
- * - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other Scopelines, etc
+ * - Tweening engine allowing to apply forward and backward multiples tweens on same
+ * properties and multiple objects
+ * - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other
+ * rTweens, etc
  * - Equivalent to the GreenSocks TweenMax/TweenLite objects, minus specialized helpers.
- * - Purely Abstract, no Dom deps, Scopeline don't apply the CSS itself
+ * - Purely Abstract, no Dom deps, rTween don't apply the CSS itself
  * - Work in node & webpack environment
  *
  * @author Nathanael BRAUN
- * CaipiLabs
+ * @contact caipilabs@gmail.com
+ * @licence AGPL-3.0
  */
-var isArray = require('isarray'),
-    isFunction = require('isfunction'),
-    isNumber = require('isnumber'),
-    isString = require('isstring'),
+var is = require('is'),
+    isArray = is.array,
+    isFunction = is.fn,
+    isNumber = is.number,
+    isString = is.string,
     easingFN = require('./easingFn'),
     merge = require('merge'),
     slice = Array.prototype.slice,
     push = Array.prototype.push,
     abs = Math.abs,
-    forkedScopeline = function forkedScopeline(cfg) {
+    forkedrTween = function forkedrTween(cfg) {
     this.__cPos = 0;
     this.__cIndex = 0;
     this.onScopeUpdated = false;
@@ -66,9 +70,9 @@ _live = false,
     lastTm,
     _running = [];
 
-var ScopeLine = function () {
-    function ScopeLine(cfg, scope) {
-        _classCallCheck(this, ScopeLine);
+var RTween = function () {
+    function RTween(cfg, scope) {
+        _classCallCheck(this, RTween);
 
         var me = this;
         this.scope = scope;
@@ -93,14 +97,14 @@ var ScopeLine = function () {
             this.mount(cfg, scope);
         } else {
             merge(this, cfg);
-            if (cfg.scopeline) this.mount(cfg.scopeline, scope);
+            if (cfg.rTween) this.mount(cfg.rTween, scope);
         }
     }
 
-    _createClass(ScopeLine, [{
+    _createClass(RTween, [{
         key: 'run',
         value: function run(target, cb, tm) {
-            ScopeLine.Runner.run(this, target, tm || this.duration, cb);
+            RTween.Runner.run(this, target, tm || this.duration, cb);
         }
 
         /**
@@ -127,7 +131,7 @@ var ScopeLine = function () {
                     factory = require('./lines/' + (map[i].type || 'Event'));
                 }
                 if (!factory) {
-                    console.log('Scopeline : Anim not found : ' + map[i].type);
+                    console.log('rTween : Anim not found : ' + map[i].type);
                     continue;
                 }
                 if (!isNumber(map[i].from))
@@ -141,20 +145,20 @@ var ScopeLine = function () {
         }
 
         /**
-         * Clone this scopeline
+         * Clone this rTween
          * @method fork
          * @param fn
          * @param ctx
          * @param easeFn
-         * @returns {forkedScopeline}
+         * @returns {forkedrTween}
          */
 
     }, {
         key: 'fork',
         value: function fork(cfg) {
             this._masterLine = this._masterLine || this;
-            forkedScopeline.prototype = this._masterLine;
-            return new forkedScopeline(cfg);
+            forkedrTween.prototype = this._masterLine;
+            return new forkedrTween(cfg);
         }
 
         /**
@@ -174,7 +178,7 @@ var ScopeLine = function () {
                 _ln = process.localLength,
                 ln = to - from || 0,
                 key = this.__cMaxKey++,
-                isTl = process instanceof ScopeLine;
+                isTl = process instanceof RTween;
 
             if (isTl) process = process.fork(null, cfg);
 
@@ -212,7 +216,7 @@ var ScopeLine = function () {
 
         /**
          * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
-         * using a scopeline length of 1
+         * using a rTween length of 1
          * @method go
          * @param to
          * @param scope
@@ -240,7 +244,7 @@ var ScopeLine = function () {
 
         /**
          * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
-         * using the mapped scopeline length
+         * using the mapped rTween length
          * @method goTo
          * @param to
          * @param scope
@@ -277,7 +281,7 @@ var ScopeLine = function () {
                 // reset forks
                 //console.log('reset ', to);
                 //for ( i = 0, ln = this.__processors.length ; i < ln ; i++ ) {
-                //    if (this.__processors[i] instanceof ScopeLine){
+                //    if (this.__processors[i] instanceof rTween){
                 //        this.__processors[i].goTo(0,0,true);
                 //    }
                 //}
@@ -294,7 +298,8 @@ var ScopeLine = function () {
                     outgoing.push(this.__marksKeys[i]);
                     //console.log("close " + this.__marksKeys[i]);
                 }
-                // if next marker is process ending a process who just start (direction has change)
+                // if next marker is process ending a process who just start (direction has
+                // change)
                 else if ((p = this.__activeProcess.indexOf(this.__marksKeys[i])) != -1) {
                         this.__activeProcess.splice(p, 1);
                         outgoing.push(this.__marksKeys[i]);
@@ -320,7 +325,8 @@ var ScopeLine = function () {
                     this.__activeProcess.splice(p, 1);
                     outgoing.push(this.__marksKeys[i]);
                     //console.log("left say out " + this.__marksKeys[i]);
-                } // if next marker is process ending a process who just start (direction has change)
+                } // if next marker is process ending a process who just start (direction has
+                // change)
                 else if ((p = this.__activeProcess.indexOf(this.__marksKeys[i])) != -1) {
                         this.__activeProcess.splice(p, 1);
                         outgoing.push(this.__marksKeys[i]);
@@ -427,9 +433,9 @@ var ScopeLine = function () {
                 //            +'\npos:'+this.__cPos
                 //            +'\nmark:'+this.__marks[p]+
                 //            '\ngdiff:'+diff68786k
-                //            +'\ninnerpos:'+(pos * (this.localLength || 1)) / abs(this.__marksLength[p])
-                //            +'\ndelta:'+(diff * (this.localLength || 1)) / abs(this.__marksLength[p])
-                //);
+                //            +'\ninnerpos:'+(pos * (this.localLength || 1)) /
+                // abs(this.__marksLength[p]) +'\ndelta:'+(diff * (this.localLength || 1)) /
+                // abs(this.__marksLength[p]) );
                 if (this.__processors[key].go) {
 
                     this.__processors[key].go(pos + d, scope);
@@ -446,10 +452,10 @@ var ScopeLine = function () {
         }
     }]);
 
-    return ScopeLine;
+    return RTween;
 }();
 
-ScopeLine.Runner = {
+RTween.Runner = {
     run: function run(tl, ctx, ln, cb) {
         _running.push([tl, ctx, ln, 0, {}, cb]);
         tl.go(0, ctx, true); //reset tl
@@ -483,5 +489,5 @@ ScopeLine.Runner = {
         }
     }
 };
-exports.default = ScopeLine;
+exports.default = RTween;
 module.exports = exports['default'];

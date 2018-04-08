@@ -19,7 +19,7 @@
 
 var
     PI       = Math.PI,
-    isNumber = require('isnumber'),
+    isNumber = require('is').number,
     sin      = Math.sin,
     cos      = Math.cos;
 
