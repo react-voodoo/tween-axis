@@ -5,9 +5,6 @@
   "author": "Nathan Braun <caipilabs@gmail.com>",
   "description": "Fast, scalable, multiscope, reversible, delta based, tween composition engine",
   "repository": "https://github.com/CaipiLabs/rTween",
-  "publishConfig": {
-    "registry": "http://npm.caipilabs.com"
-  },
   "main": "dist/rTween.js",
   "scripts": {
     "build": "babel src -d dist"
