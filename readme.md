@@ -6,7 +6,7 @@ Fast, scalable, multiscope, reversible, delta based, tween composition engine
 
 - rTween engine allow to apply forward and backward multiples tweens on same properties and multiple objects
 - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other Scopelines, etc
-- Allow frame pre-generation, convert svg path to/from gps path, ... solve many esotheric problems
+- Allow frame pre-generation,
 - Purely Abstract, no Dom deps, rTween don't apply the CSS itself
 - Work in node & webpack environment
 
@@ -16,9 +16,9 @@ Fast, scalable, multiscope, reversible, delta based, tween composition engine
 - Doc & clean
 - Usability & interpolations helpers ?
 - ES6 updates
-- v8 Optims updates
+- Optims updates
 
 ### License ?
 
-AGPL license
+MIT license
 
