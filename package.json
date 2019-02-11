@@ -10,6 +10,7 @@
     "build": "babel src -d dist"
   },
   "dependencies": {
+    "d3-ease": "^1.0.5",
     "is": "^3.2.1",
     "merge": "^1.2.0",
     "point-at-length": "^1.0.1"

@@ -42,7 +42,7 @@ var
 	isFunction   = is.fn,
 	isNumber     = is.number,
 	isString     = is.string,
-	easingFN     = require('./easingFn'),
+	easingFN     = require('d3-ease'),
 	merge        = require('merge'),
 	slice        = Array.prototype.slice,
 	push         = Array.prototype.push,
@@ -63,8 +63,9 @@ var
 export default class RTween {
 	
 	static Runner = {
-		run  : function ( tl, ctx, ln, cb ) {
-			_running.push([tl, ctx, ln, 0, {}, cb]);
+		run  : function ( tl, ctx, duration, cb ) {
+			let apply = ( pos, size ) => tl.go(pos / size, ctx);
+			_running.push({ apply, duration, cpos: 0, cb });
 			tl.go(0, ctx, true);//reset tl
 			
 			if ( !_live ) {
@@ -78,15 +79,14 @@ export default class RTween {
 			var i  = 0, o, tm = Date.now(), delta = tm - lastTm;
 			lastTm = tm;
 			for ( ; i < _running.length; i++ ) {
-				_running[i][3] = Math.min(delta + _running[i][3], _running[i][2]);//cpos
-				_running[i][0].go(
-					_running[i][3] / _running[i][2],
-					_running[i][1]
+				_running[i].cpos = Math.min(delta + _running[i].cpos, _running[i].duration);//cpos
+				_running[i].apply(
+					_running[i].cpos, _running[i].duration
 				);
 				// console.log("TL runner ",_running[i][3]);
-				if ( _running[i][3] == _running[i][2] ) {
+				if ( _running[i].cpos == _running[i].duration ) {
 					
-					_running[i][5] && setTimeout(_running[i][5]);
+					_running[i].cb && setTimeout(_running[i].cb);
 					_running.splice(i, 1), i--;
 				}
 				
@@ -130,8 +130,45 @@ export default class RTween {
 		}
 	}
 	
+	/**
+	 * Run this tween line from 0 to his duration using linear
+	 * @param target
+	 * @param cb
+	 * @param tm
+	 */
 	run( target, cb, tm ) {
 		RTween.Runner.run(this, target, tm || this.duration, cb);
+	}
+	
+	/**
+	 * Tween this tween line to 'to' during 'tm' ms using easing fn
+	 * @param to {int}
+	 * @param tm {int} duration in ms
+	 * @param easing {function} easing fn
+	 * @param cb
+	 */
+	runTo( to, tm, easing = easingFN.easeLinear, cb ) {
+		let from   = this.__cPos,
+		    length = to - from;
+		
+		_running.push(
+			{
+				apply   : ( pos, max ) => {
+					let x = easing(pos / max);
+					this.goTo((from + (x) * length))
+				},
+				duration: tm,
+				cpos    : 0,
+				cb
+			})
+		;
+		
+		if ( !_live ) {
+			_live  = true;
+			lastTm = Date.now();
+			// console.log("TL runner On");
+			setTimeout(RTween.Runner._tick, 16);
+		}
 	}
 	
 	/**
