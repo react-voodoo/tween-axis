@@ -1,6 +1,6 @@
 {
   "name": "rtween",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast, scalable, multiscope, reversible, delta based, tween composition engine",

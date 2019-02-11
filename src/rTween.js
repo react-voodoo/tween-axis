@@ -145,17 +145,19 @@ export default class RTween {
 	 * @param to {int}
 	 * @param tm {int} duration in ms
 	 * @param easing {function} easing fn
-	 * @param cb
+	 * @param tick {function} fn called at each tick
+	 * @param cb {function} fn called on complete
 	 */
-	runTo( to, tm, easing = easingFN.easeLinear, cb ) {
+	runTo( to, tm, easing = easingFN.easeLinear, tick, cb ) {
 		let from   = this.__cPos,
 		    length = to - from;
 		
 		_running.push(
 			{
 				apply   : ( pos, max ) => {
-					let x = easing(pos / max);
-					this.goTo((from + (x) * length))
+					let x = (from + (easing(pos / max)) * length);
+					this.goTo(x);
+					tick && tick(x);
 				},
 				duration: tm,
 				cpos    : 0,

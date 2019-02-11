@@ -120,24 +120,28 @@ var RTween = function () {
    * @param to {int}
    * @param tm {int} duration in ms
    * @param easing {function} easing fn
-   * @param cb
+   * @param tick {function} fn called at each tick
+   * @param cb {function} fn called on complete
    */
 
 	}, {
 		key: 'runTo',
 		value: function runTo(to, tm) {
+			var easing = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : easingFN.easeLinear;
+
 			var _this = this;
 
-			var easing = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : easingFN.easeLinear;
-			var cb = arguments[3];
+			var tick = arguments[3];
+			var cb = arguments[4];
 
 			var from = this.__cPos,
 			    length = to - from;
 
 			_running.push({
 				apply: function apply(pos, max) {
-					var x = easing(pos / max);
-					_this.goTo(from + x * length);
+					var x = from + easing(pos / max) * length;
+					_this.goTo(x);
+					tick && tick(x);
 				},
 				duration: tm,
 				cpos: 0,
