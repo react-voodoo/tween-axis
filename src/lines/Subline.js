@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017.  Caipi Labs.  All rights reserved.
+ * Copyright (c) 2019. Nathanael Braun.  All rights reserved.
  *
  * This File is part of Caipi. You can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -14,7 +14,7 @@
  *  This project is dual licensed under AGPL and Commercial Licence.
  *
  * @author : Nathanael Braun
- * @contact : caipilabs@gmail.com
+ * @contact : n8tz.js@gmail.com
  */
 
 module.export =

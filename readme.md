@@ -8,7 +8,7 @@ Fast, scalable, multiscope, reversible, delta based, tween composition engine
 - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other Scopelines, etc
 - Allow frame pre-generation,
 - Purely Abstract, no Dom deps, rTween don't apply the CSS itself
-- Work in node & webpack environment
+- Work in anywhere environment
 
 ### Todo :
 
@@ -20,5 +20,5 @@ Fast, scalable, multiscope, reversible, delta based, tween composition engine
 
 ### License ?
 
-MIT license
+AGPL-3.0 license
 

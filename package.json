@@ -1,10 +1,10 @@
 {
   "name": "rtween",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "license": "AGPL-3.0",
-  "author": "Nathan Braun <caipilabs@gmail.com>",
+  "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast, scalable, multiscope, reversible, delta based, tween composition engine",
-  "repository": "https://github.com/CaipiLabs/rTween",
+  "repository": "https://github.com/n8tz/rTween",
   "main": "dist/rTween.js",
   "scripts": {
     "build": "babel src -d dist"
