@@ -1,6 +1,6 @@
 {
   "name": "rtween",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast, scalable, multiscope, reversible, delta based, tween composition engine",
@@ -9,8 +9,10 @@
   "scripts": {
     "build": "babel src -d dist"
   },
+  "peerDependencies": {
+    "d3-ease": "^1.0.5"
+  },
   "dependencies": {
-    "d3-ease": "^1.0.5",
     "is": "^3.2.1",
     "merge": "^1.2.0",
     "point-at-length": "^1.0.1"

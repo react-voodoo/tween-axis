@@ -51,7 +51,6 @@ var is = require('is'),
     isFunction = is.fn,
     isNumber = is.number,
     isString = is.string,
-    easingFN = require('d3-ease'),
     merge = require('merge'),
     slice = Array.prototype.slice,
     push = Array.prototype.push,
@@ -127,7 +126,9 @@ var RTween = function () {
 	}, {
 		key: 'runTo',
 		value: function runTo(to, tm) {
-			var easing = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : easingFN.easeLinear;
+			var easing = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : function (x) {
+				return x;
+			};
 
 			var _this = this;
 

@@ -42,7 +42,6 @@ var
 	isFunction   = is.fn,
 	isNumber     = is.number,
 	isString     = is.string,
-	easingFN     = require('d3-ease'),
 	merge        = require('merge'),
 	slice        = Array.prototype.slice,
 	push         = Array.prototype.push,
@@ -148,7 +147,7 @@ export default class RTween {
 	 * @param tick {function} fn called at each tick
 	 * @param cb {function} fn called on complete
 	 */
-	runTo( to, tm, easing = easingFN.easeLinear, tick, cb ) {
+	runTo( to, tm, easing = x => x, tick, cb ) {
 		let from   = this.__cPos,
 		    length = to - from;
 		
