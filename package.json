@@ -1,34 +1,40 @@
 {
   "name": "rtween",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast, scalable, multiscope, reversible, delta based, tween composition engine",
   "repository": "https://github.com/n8tz/rTween",
   "main": "dist/rTween.js",
   "scripts": {
-    "build": "babel src -d dist"
+    "build": "wpi"
   },
-  "peerDependencies": {
-    "d3-ease": "^1.0.5"
+  "wpInherit": {
+    "default": {
+      "rootFolder": "src",
+      "basedOn": "Component",
+      "vars": {
+        "rootAlias": "rTween",
+        "production": true,
+        "externals": true,
+        "webpackPatch": {
+          "optimization": {
+            "usedExports": true
+          }
+        }
+      },
+      "extend": [
+        "wpi-react-hmr-ssr"
+      ]
+    }
   },
   "dependencies": {
+    "d3-ease": "^1.0.5",
     "is": "^3.2.1",
-    "merge": "^1.2.0",
     "point-at-length": "^1.0.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.14.0",
-    "babel-core": "^6.3.17",
-    "babel-loader": "^6.2.1",
-    "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-preset-es2015": "^6.3.13",
-    "babel-preset-react": "^6.3.13",
-    "babel-preset-stage-0": "^6.5.0",
-    "babel-preset-stage-1": "^6.5.0",
-    "eslint": "^3.14.1",
-    "events": "^1.1.1",
-    "webpack": "^1.13.1",
-    "webpack-closure-compiler": "^1.1.2"
+    "wpi-react-hmr-ssr": "^1.1.6",
+    "webpack-inherit": "^1.4.10"
   }
 }

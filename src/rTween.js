@@ -1,24 +1,19 @@
 /*
- * Copyright (c) 2019. Nathanael Braun.  All rights reserved.
+ * The MIT License (MIT)
+ * Copyright (c) 2019. Wise Wild Web
  *
- * This File is part of Caipi. You can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *  This project is dual licensed under AGPL and Commercial Licence.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * @author : Nathanael Braun
- * @contact : n8tz.js@gmail.com
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ *  @author : Nathanael Braun
+ *  @contact : n8tz.js@gmail.com
  */
 
 /**
- * # Caipi rTween
+ * #  rTween
  *
  * Scalable, multiscope, reversible, delta based, interpolation/tweening engine
  *
@@ -28,36 +23,36 @@
  * properties and multiple objects
  * - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other
  * rTweens, etc
- * - Equivalent to the GreenSocks TweenMax/TweenLite objects, minus specialized helpers.
  * - Purely Abstract, no Dom deps, rTween don't apply the CSS itself
  * - Work in node & webpack environment
  *
  * @author Nathanael BRAUN
- * @contact caipilabs@gmail.com
+ * @contact n8tz.js@gmail.com
  * @licence AGPL-3.0
  */
-var
-	is           = require('is'),
-	isArray      = is.array,
-	isFunction   = is.fn,
-	isNumber     = is.number,
-	isString     = is.string,
-	merge        = require('merge'),
-	slice        = Array.prototype.slice,
-	push         = Array.prototype.push,
-	abs          = Math.abs,
-	forkedrTween = function ( cfg ) {
-		this.__cPos          = 0;
-		this.__cIndex        = 0;
-		this.onScopeUpdated  = false;
-		this.__activeProcess = [];
-		this.__outgoing      = [];
-		this.__incoming      = [];
-	},
+import is from "is";
+
+const easingFN     = require("d3-ease"),
+      isArray      = is.array,
+      isNumber     = is.number,
+      isString     = is.string,
+      slice        = Array.prototype.slice,
+      push         = Array.prototype.push,
+      abs          = Math.abs,
+      forkedrTween = function ( cfg ) {
+	      this.__cPos          = 0;
+	      this.__cIndex        = 0;
+	      this.onScopeUpdated  = false;
+	      this.__activeProcess = [];
+	      this.__outgoing      = [];
+	      this.__incoming      = [];
+      };
+
+let
 	// runner
-	_live        = false,
+	_live    = false,
 	lastTm,
-	_running     = [];
+	_running = [];
 
 export default class RTween {
 	
@@ -100,7 +95,6 @@ export default class RTween {
 	};
 	
 	constructor( cfg, scope ) {
-		var me             = this;
 		this.scope         = scope;
 		cfg                = cfg || {};
 		this.__marks       = [];
@@ -123,7 +117,7 @@ export default class RTween {
 			this.mount(cfg, scope);
 		}
 		else {
-			merge(this, cfg);
+			Object.assign(this, cfg);
 			if ( cfg.rTween )
 				this.mount(cfg.rTween, scope);
 		}
@@ -178,12 +172,12 @@ export default class RTween {
 	 * @param map
 	 */
 	mount( map, scope ) {
-		var i, ln, d = this.duration || 0, p = 0, me = this, max = 0, factory;
+		var i, ln, d = this.duration || 0, p = 0, max = 0, factory;
 		for ( i = 0, ln = map.length; i < ln; i++ ) {
-			if ( isString(map[i].easingFn) )
-				map[i].easingFn = easingFN[map[i].easingFn] || false;
+			if ( isString(map[i].easeFn) )
+					map[i] = { ...map[i], easeFn: easingFN[map[i].easeFn] || false };
 			if ( map[i].type == "Subline" ) {
-				factory = map[i].apply.fork(null, map[i], map[i].easingFn);
+				factory = map[i].apply.fork(null, map[i], map[i].easeFn);
 			}
 			else {
 				factory = require('./lines/' + (map[i].type || 'Event'));
@@ -203,7 +197,7 @@ export default class RTween {
 			
 		}
 		
-		this.duration = d = Math.max(d, max);
+		this.duration = Math.max(d, max);
 		return this;
 	}
 	
