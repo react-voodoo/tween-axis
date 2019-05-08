@@ -184,7 +184,7 @@ export default class RTween {
 				factory = map[i].apply.fork(null, map[i], map[i].easeFn);
 			}
 			else {
-				factory = require('./lines/' + (map[i].type || 'Event'));
+				factory = require('./lines/' + (map[i].type || 'Tween'));
 			}
 			if ( !factory ) {
 				console.log('rTween : Anim not found : ' + map[i].type);
