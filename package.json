@@ -1,6 +1,6 @@
 {
   "name": "tween-axis",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Abstract, fast & reversible, tween composition engine",
