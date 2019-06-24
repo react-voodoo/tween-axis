@@ -34,7 +34,8 @@
  * @contact n8tz.js@gmail.com
  * @licence AGPL-3.0
  */
-import is from "is";
+import is        from "is";
+import lineTypes from "./lines/(*).js";
 
 const easingFN     = require("d3-ease"),
       isArray      = is.array,
@@ -58,7 +59,7 @@ let
 	lastTm,
 	_running = [];
 
-export default class RTween {
+export default class TweenAxis {
 	
 	static Runner = {
 		run  : function ( tl, ctx, duration, cb ) {
@@ -74,7 +75,7 @@ export default class RTween {
 			}
 		},
 		_tick: function _tick() {
-			var i  = 0, o, tm = Date.now(), delta = tm - lastTm;
+			let i  = 0, o, tm = Date.now(), delta = tm - lastTm;
 			lastTm = tm;
 			for ( ; i < _running.length; i++ ) {
 				_running[i].cpos = Math.min(delta + _running[i].cpos, _running[i].duration);//cpos
@@ -122,8 +123,8 @@ export default class RTween {
 		}
 		else {
 			Object.assign(this, cfg);
-			if ( cfg.rTween )
-				this.mount(cfg.rTween, scope);
+			if ( cfg.TweenAxis )
+				this.mount(cfg.TweenAxis, scope);
 		}
 	}
 	
@@ -134,7 +135,7 @@ export default class RTween {
 	 * @param tm
 	 */
 	run( target, cb, tm ) {
-		RTween.Runner.run(this, target, tm || this.duration, cb);
+		TweenAxis.Runner.run(this, target, tm || this.duration, cb);
 	}
 	
 	/**
@@ -166,7 +167,7 @@ export default class RTween {
 			_live  = true;
 			lastTm = Date.now();
 			// console.log("TL runner On");
-			setTimeout(RTween.Runner._tick, 16);
+			setTimeout(TweenAxis.Runner._tick, 16);
 		}
 	}
 	
@@ -176,18 +177,18 @@ export default class RTween {
 	 * @param map
 	 */
 	mount( map, scope ) {
-		var i, ln, d = this.duration || 0, p = 0, max = 0, factory;
+		let i, ln, d = this.duration || 0, p = 0, max = 0, factory;
 		for ( i = 0, ln = map.length; i < ln; i++ ) {
 			if ( isString(map[i].easeFn) )
-					map[i] = { ...map[i], easeFn: easingFN[map[i].easeFn] || false };
+				map[i] = { ...map[i], easeFn: easingFN[map[i].easeFn] || false };
 			if ( map[i].type == "Subline" ) {
 				factory = map[i].apply.fork(null, map[i], map[i].easeFn);
 			}
 			else {
-				factory = require('./lines/' + (map[i].type || 'Tween'));
+				factory = lineTypes[map[i].type || 'Tween'];
 			}
 			if ( !factory ) {
-				console.log('rTween : Anim not found : ' + map[i].type);
+				console.log('TweenAxis : Anim not found : ' + map[i].type);
 				continue;
 			}
 			if ( !isNumber(map[i].from) )
@@ -206,17 +207,17 @@ export default class RTween {
 	}
 	
 	/**
-	 * Clone this rTween
+	 * Clone this TweenAxis
 	 * @method fork
 	 * @param fn
 	 * @param ctx
 	 * @param easeFn
-	 * @returns {forkedrTween}
+	 * @returns {forkedTweenAxis}
 	 */
 	fork( cfg ) {
-		this._masterLine       = this._masterLine || this;
-		forkedrTween.prototype = this._masterLine;
-		return new forkedrTween(cfg);
+		this._masterLine          = this._masterLine || this;
+		forkedTweenAxis.prototype = this._masterLine;
+		return new forkedTweenAxis(cfg);
 	}
 	
 	/**
@@ -226,14 +227,14 @@ export default class RTween {
 	 * @param to
 	 * @param process
 	 * @param cfg
-	 * @returns {rTween}
+	 * @returns {TweenAxis}
 	 */
 	addProcess( from, to, process, cfg ) {
-		var i    = 0,
+		let i    = 0,
 		    _ln  = process.localLength,
 		    ln   = (to - from) || 0,
 		    key  = this.__cMaxKey++,
-		    isTl = process instanceof RTween;
+		    isTl = process instanceof TweenAxis;
 		
 		if ( isTl )
 			process = process.fork(null, cfg);
@@ -269,7 +270,7 @@ export default class RTween {
 	
 	/**
 	 * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
-	 * using a rTween length of 1
+	 * using a TweenAxis length of 1
 	 * @method go
 	 * @param to
 	 * @param scope
@@ -293,7 +294,7 @@ export default class RTween {
 	
 	/**
 	 * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
-	 * using the mapped rTween length
+	 * using the mapped TweenAxis length
 	 * @method goTo
 	 * @param to
 	 * @param scope
@@ -309,7 +310,7 @@ export default class RTween {
 			this.__cIndex = this.__cPos = 0;
 		}
 		
-		var i        = this.__cIndex,
+		let i        = this.__cIndex,
 		    p,
 		    ln,
 		    outgoing = this.__outgoing,
@@ -325,7 +326,7 @@ export default class RTween {
 			// reset forks
 			//console.log('reset ', to);
 			//for ( i = 0, ln = this.__processors.length ; i < ln ; i++ ) {
-			//    if (this.__processors[i] instanceof rTween){
+			//    if (this.__processors[i] instanceof TweenAxis){
 			//        this.__processors[i].goTo(0,0,true);
 			//    }
 			//}

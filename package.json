@@ -5,7 +5,7 @@
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Abstract, fast & reversible, tween composition engine",
   "repository": "https://github.com/n8tz/rTween",
-  "main": "dist/rTween.js",
+  "main": "dist/tween-axis.js",
   "scripts": {
     "build": "wpi"
   },
@@ -14,7 +14,7 @@
       "rootFolder": "src",
       "basedOn": "Component",
       "vars": {
-        "rootAlias": "rTween",
+        "rootAlias": "tween-axis",
         "production": true,
         "externals": true,
         "webpackPatch": {
