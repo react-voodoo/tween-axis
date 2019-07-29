@@ -17,19 +17,9 @@
  */
 
 /**
- * #  rTween
+ * #  tweenAxis
  *
  * Scalable, multiscope, reversible, delta based, interpolation/tweening engine
- *
- * ## rTween what ?
- *
- * - Tweening engine allowing to apply forward and backward multiples tweens on same
- * properties and multiple objects
- * - Allow live composition of classic tweens, circle tweens, SVG Path tweens, other
- * rTweens, etc
- * - Purely Abstract, no Dom deps, rTween don't apply the CSS itself
- * - Work in node & webpack environment
- *
  * @author Nathanael BRAUN
  * @contact n8tz.js@gmail.com
  * @licence AGPL-3.0
@@ -37,14 +27,11 @@
 import is        from "is";
 import lineTypes from "./lines/(*).js";
 
-const easingFN     = require("d3-ease"),
-      isArray      = is.array,
-      isNumber     = is.number,
-      isString     = is.string,
-      slice        = Array.prototype.slice,
-      push         = Array.prototype.push,
-      abs          = Math.abs,
-      forkedrTween = function ( cfg ) {
+const easingFN        = require("d3-ease"),
+      slice           = Array.prototype.slice,
+      push            = Array.prototype.push,
+      abs             = Math.abs,
+      ForkedTweenAxis = function ( cfg ) {
 	      this.__cPos          = 0;
 	      this.__cIndex        = 0;
 	      this.onScopeUpdated  = false;
@@ -117,7 +104,7 @@ export default class TweenAxis {
 		this.__cPos          = 0;
 		this.__cIndex        = 0;
 		this.__cMaxKey       = 1;
-		if ( isArray(cfg) ) {
+		if ( is.array(cfg) ) {
 			this.localLength = 1;
 			this.mount(cfg, scope);
 		}
@@ -179,7 +166,7 @@ export default class TweenAxis {
 	mount( map, scope ) {
 		let i, ln, d = this.duration || 0, p = 0, max = 0, factory;
 		for ( i = 0, ln = map.length; i < ln; i++ ) {
-			if ( isString(map[i].easeFn) )
+			if ( is.string(map[i].easeFn) )
 				map[i] = { ...map[i], easeFn: easingFN[map[i].easeFn] || false };
 			if ( map[i].type == "Subline" ) {
 				factory = map[i].apply.fork(null, map[i], map[i].easeFn);
@@ -191,7 +178,7 @@ export default class TweenAxis {
 				console.log('TweenAxis : Anim not found : ' + map[i].type);
 				continue;
 			}
-			if ( !isNumber(map[i].from) )
+			if ( !is.number(map[i].from) )
 			// no from so assume it's sync
 				this.addProcess(
 					d, d + map[i].duration, factory, map[i]
@@ -212,12 +199,12 @@ export default class TweenAxis {
 	 * @param fn
 	 * @param ctx
 	 * @param easeFn
-	 * @returns {forkedTweenAxis}
+	 * @returns {ForkedTweenAxis}
 	 */
 	fork( cfg ) {
 		this._masterLine          = this._masterLine || this;
-		forkedTweenAxis.prototype = this._masterLine;
-		return new forkedTweenAxis(cfg);
+		ForkedTweenAxis.prototype = this._masterLine;// todo: this should not work
+		return new ForkedTweenAxis(cfg);
 	}
 	
 	/**

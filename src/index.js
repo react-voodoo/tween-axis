@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import _rTween from "./tween-axis";
+import _tweenAxis from "./tween-axis";
 
-export default _rTween;
-export const rTween = _rTween;
+export default _tweenAxis;
+export const tweenAxis = _tweenAxis;
+
