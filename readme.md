@@ -51,6 +51,7 @@ console.log(axis.go(.75, context));
 ### Todo :
 
 - Optims updates
+- Recycling updates
 
 ### License ?
 
