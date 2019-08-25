@@ -42,10 +42,9 @@ const easingFN        = require("d3-ease"),
 
 let
 	// runner
-	_live               = false,
+	_live    = false,
 	lastTm,
-	_running            = [],
-	recyclableTweenAxis = [];
+	_running = [];
 
 export default class TweenAxis {
 	
@@ -88,19 +87,6 @@ export default class TweenAxis {
 	};
 	
 	constructor( cfg, scope ) {
-		if ( recyclableTweenAxis.length ) {
-			let recyled   = recyclableTweenAxis.pop();
-			recyled.scope = scope;
-			if ( is.array(cfg) ) {
-				recyled.localLength = 1;
-				recyled.mount(cfg, scope);
-			}
-			else {
-				if ( cfg.TweenAxis )
-					recyled.mount(cfg.TweenAxis, scope);
-			}
-			return recyled;
-		}
 		this.scope         = scope;
 		cfg                = cfg || {};
 		this.__marks       = [];
@@ -130,24 +116,6 @@ export default class TweenAxis {
 	}
 	
 	destroy() {
-		
-		this.scope                  = undefined;
-		this.__marks.length         = 0;
-		this.__marksLength.length   = 0;
-		this.__marksKeys.length     = 0;
-		this.__processors.length    = 0;
-		this.__config.length        = 0;
-		this.__activeForks.length   = 0;
-		this.__activeProcess.length = 0;
-		
-		this.__activeProcess.length = 0;
-		this.__outgoing.length      = 0;
-		this.__incoming.length      = 0;
-		this.__cPos                 = 0;
-		this.duration               = 0;
-		this.__cIndex               = 0;
-		this.__cMaxKey              = 1;
-		recyclableTweenAxis.push(this);
 	}
 	
 	/**
