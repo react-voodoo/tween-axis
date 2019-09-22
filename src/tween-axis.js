@@ -300,15 +300,15 @@ export default class TweenAxis {
 			this.__cIndex = this.__cPos = 0;
 		}
 		
-		let i        = this.__cIndex,
+		let currentMarkerIndex = this.__cIndex,
 		    p,
 		    ln,
-		    outgoing = this.__outgoing,
-		    incoming = this.__incoming,
+		    outgoing           = this.__outgoing,
+		    incoming           = this.__incoming,
 		    pos, _from, _to,
 		    d, key,
-		    mLn      = this.__marks.length,
-		    diff     = to - this.__cPos;
+		    maxMarkerIndex     = this.__marks.length,
+		    delta               = to - this.__cPos;
 		if ( reset ) {
 			this.__activeProcess.length = 0;
 			this.__outgoing.length      = 0;
@@ -325,72 +325,72 @@ export default class TweenAxis {
 		// 1st ajust period, knowing which process are involved / leaving
 		// while my indice target a marker/time period inferior to my pos
 		
-		while ( i < mLn && to > this.__marks[i] || (diff >= 0 && this.__marks[i] == to) ) {
+		while ( currentMarkerIndex < maxMarkerIndex && to > this.__marks[currentMarkerIndex] || (delta >= 0 && this.__marks[currentMarkerIndex] == to) ) {
 			
 			// if next marker is ending an active process
-			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[i])) != -1 ) {
+			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
 				this.__activeProcess.splice(p, 1);
-				outgoing.push(this.__marksKeys[i]);
+				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close " + this.__marksKeys[i]);
 			}
 			// if next marker is process ending a process who just start (direction has
 			// change)
-			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[i])) != -1 ) {
+			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) != -1 ) {
 				this.__activeProcess.splice(p, 1);
-				outgoing.push(this.__marksKeys[i]);
+				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close after dir change" + this.__marksKeys[i]);
 			}
 			// if next marker is process ending a process who just start
-			else if ( (p = incoming.indexOf(-this.__marksKeys[i])) != -1 ) {
+			else if ( (p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
 				incoming.splice(p, 1);
-				outgoing.push(this.__marksKeys[i]);
+				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close starting " + this.__marksKeys[i]);
 			}
 			else {
-				incoming.push(this.__marksKeys[i]);
+				incoming.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("right say in " + this.__marksKeys[i]);
 			}
-			i++;
+			currentMarkerIndex++;
 		}
 		
 		// while my indice-1 target a marker/time period superior to my pos
 		while (
-			(i - 1) >= 0 && (to < this.__marks[i - 1] || ((diff < 0) && this.__marks[i - 1] == to))
+			(currentMarkerIndex - 1) >= 0 && (to < this.__marks[currentMarkerIndex - 1] || ((delta < 0) && this.__marks[currentMarkerIndex - 1] == to))
 			) {
-			i--;
+			currentMarkerIndex--;
 			
-			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[i])) != -1 ) {
+			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
 				this.__activeProcess.splice(p, 1);
-				outgoing.push(this.__marksKeys[i]);
+				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("left say out " + this.__marksKeys[i]);
 				
 			}// if next marker is process ending a process who just start (direction has
 			 // change)
-			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[i])) != -1 ) {
+			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) != -1 ) {
 				this.__activeProcess.splice(p, 1);
-				outgoing.push(this.__marksKeys[i]);
+				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close after dir change" + this.__marksKeys[i]);
 			}
-			else if ( (p = incoming.indexOf(-this.__marksKeys[i])) != -1 ) {
+			else if ( (p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
 				incoming.splice(p, 1);
-				outgoing.push(this.__marksKeys[i]);
+				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("left say out from incoming " + this.__marksKeys[i]);
 			}
 			else {
 				//console.log("left say in " + this.__marksKeys[i]);
-				incoming.push(this.__marksKeys[i]);
+				incoming.push(this.__marksKeys[currentMarkerIndex]);
 			}
 		}
 		
 		// now dispatching deltas
 		//console.log(incoming, outgoing, this.__activeProcess);
 		
-		this.__cIndex = i;
+		this.__cIndex = currentMarkerIndex;
 		// those leaving subline
-		for ( i = 0, ln = outgoing.length; i < ln; i++ ) {
-			p   = this._getIndex(outgoing[i]);
-			key = abs(outgoing[i]);
-			if ( outgoing[i] < 0 ) {
+		for ( currentMarkerIndex = 0, ln = outgoing.length; currentMarkerIndex < ln; currentMarkerIndex++ ) {
+			p   = this._getIndex(outgoing[currentMarkerIndex]);
+			key = abs(outgoing[currentMarkerIndex]);
+			if ( outgoing[currentMarkerIndex] < 0 ) {
 				_from = Math.min(
 					this.__marks[p],
 					Math.max(this.__cPos, this.__marks[p] - this.__marksLength[key])
@@ -440,16 +440,16 @@ export default class TweenAxis {
 		}
 		
 		// those entering subline
-		for ( i = 0, ln = incoming.length; i < ln; i++ ) {
-			p   = this._getIndex(incoming[i]);
-			key = abs(incoming[i]);
+		for ( currentMarkerIndex = 0, ln = incoming.length; currentMarkerIndex < ln; currentMarkerIndex++ ) {
+			p   = this._getIndex(incoming[currentMarkerIndex]);
+			key = abs(incoming[currentMarkerIndex]);
 			
-			if ( incoming[i] < 0 ) {
+			if ( incoming[currentMarkerIndex] < 0 ) {
 				
 				_from = this.__marksLength[key];
 				_to   = Math.max(
 					this.__marks[p] - this.__marksLength[key],
-					Math.min(this.__cPos + diff, this.__marks[p])
+					Math.min(this.__cPos + delta, this.__marks[p])
 				) - (this.__marks[p] - this.__marksLength[key]);
 				
 				pos = _from;
@@ -461,7 +461,7 @@ export default class TweenAxis {
 				_from = 0;
 				_to   = Math.max(
 					this.__marks[p],
-					Math.min(this.__cPos + diff, this.__marks[p] + this.__marksLength[key])
+					Math.min(this.__cPos + delta, this.__marks[p] + this.__marksLength[key])
 				) - this.__marks[p];
 				pos   = _from;
 				d     = _to - _from;
@@ -500,16 +500,16 @@ export default class TweenAxis {
 		}
 		// and those who where already there
 		//if ( !reset )
-		for ( i = 0, ln = this.__activeProcess.length; i < ln; i++ ) {
-			p   = this._getIndex(this.__activeProcess[i]);
-			key = abs(this.__activeProcess[i]);
+		for ( currentMarkerIndex = 0, ln = this.__activeProcess.length; currentMarkerIndex < ln; currentMarkerIndex++ ) {
+			p   = this._getIndex(this.__activeProcess[currentMarkerIndex]);
+			key = abs(this.__activeProcess[currentMarkerIndex]);
 			
 			//d = (this.__cPos - diff)<this.__marks[p]?this.__cPos-this.__marks[p] : diff;
-			pos = this.__activeProcess[i] < 0
+			pos = this.__activeProcess[currentMarkerIndex] < 0
 			      ? this.__cPos - (this.__marks[p] - this.__marksLength[key])
 			      : (this.__cPos - this.__marks[p]);
 			pos = (this.localLength || 1) * (pos) / this.__marksLength[key];
-			d   = (diff * (this.localLength || 1)) / this.__marksLength[key];
+			d   = (delta * (this.localLength || 1)) / this.__marksLength[key];
 			//console.log("active " + p + " " + this.__marksLength[p]
 			//            +'\nto:'+to
 			//            +'\npos:'+this.__cPos
@@ -544,7 +544,7 @@ export default class TweenAxis {
 		incoming.length = 0;
 		
 		this.__cPos = to;
-		this.onScopeUpdated && this.onScopeUpdated(to, diff, scope);
+		this.onScopeUpdated && this.onScopeUpdated(to, delta, scope);
 	}
 }
 
