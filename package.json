@@ -1,18 +1,18 @@
 {
   "name": "tween-axis",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast additive tween composition engine",
   "repository": "https://github.com/n8tz/tween-axis",
   "main": "dist/tween-axis.js",
   "scripts": {
-    "build": "wpi"
+    "build": "lpack"
   },
-  "wpInherit": {
+  "layerPack": {
     "default": {
       "rootFolder": "src",
-      "basedOn": "Component",
+      "basedOn": "component",
       "vars": {
         "rootAlias": "tween-axis",
         "production": true,
@@ -24,7 +24,7 @@
         }
       },
       "extend": [
-        "wpi-react-hmr-ssr"
+        "lpack-react"
       ]
     }
   },
@@ -35,7 +35,7 @@
     "point-at-length": "^1.0.1"
   },
   "devDependencies": {
-    "wpi-react-hmr-ssr": "^1.1.6",
-    "webpack-inherit": "^1.4.10"
+    "lpack-react": "^1.0.0",
+    "layer-pack": "^1.0.0"
   }
 }
