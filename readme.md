@@ -63,6 +63,7 @@ console.log(axis.go(.75, context));
 ### Todo :
 
 - Optims updates
+- allow negative tween position
 - Recycling updates
 - more doc
 
