@@ -1,10 +1,10 @@
 {
   "name": "tween-axis",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "license": "AGPL-3.0",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast additive tween composition engine",
-  "repository": "https://github.com/n8tz/tween-axis",
+  "repository": "https://github.com/react-voodoo/tween-axis",
   "main": "dist/tween-axis.js",
   "scripts": {
     "build": "lpack"
