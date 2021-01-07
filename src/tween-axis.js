@@ -190,7 +190,7 @@ export default class TweenAxis {
 				continue;
 			}
 			if ( !is.number(map[i].from) )
-			// no from so assume it's sync
+				// no from so assume it's sync
 				this.addProcess(
 					d, d + map[i].duration, factory, map[i]
 				), d += map[i].duration || 0;
@@ -274,21 +274,12 @@ export default class TweenAxis {
 	 * @param scope
 	 * @param reset
 	 */
-	go( to, scope, reset ) {
-		this.goTo(to * this.duration, scope, reset);
+	go( to, scope, reset, noEvents ) {
+		this.goTo(to * this.duration, scope, reset, noEvents);
 		this.__cRPos = to;
 		return scope || this.scope;
 	}
 	
-	getPosAt( to, scope ) {
-		
-		this.__activeProcess.length = 0;
-		this.__outgoing.length      = 0;
-		this.__incoming.length      = 0;
-		this.__cPos                 = 0;
-		this.__cIndex               = 0;
-		return this.go(to, scope);
-	}
 	
 	/**
 	 * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
@@ -298,7 +289,7 @@ export default class TweenAxis {
 	 * @param scope
 	 * @param reset
 	 */
-	goTo( to, scope, reset ) {
+	goTo( to, scope, reset, noEvents ) {
 		scope = scope || this.scope;
 		if ( this.window )
 			to = this.window.start + (to / this.duration) * this.window.length;
@@ -316,7 +307,7 @@ export default class TweenAxis {
 		    pos, _from, _to,
 		    d, key,
 		    maxMarkerIndex     = this.__marks.length,
-		    delta               = to - this.__cPos;
+		    delta              = to - this.__cPos;
 		if ( reset ) {
 			this.__activeProcess.length = 0;
 			this.__outgoing.length      = 0;
@@ -341,7 +332,7 @@ export default class TweenAxis {
 				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close " + this.__marksKeys[i]);
 			}
-			// if next marker is process ending a process who just start (direction has
+				// if next marker is process ending a process who just start (direction has
 			// change)
 			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) != -1 ) {
 				this.__activeProcess.splice(p, 1);
@@ -429,6 +420,8 @@ export default class TweenAxis {
 			//            '\ndelta:'+d
 			//);
 			
+			if ( noEvents && this.__config[key].type === "Event" )
+				continue;
 			if ( this.__processors[key].go ) {
 				this.__processors[key].go(
 					pos + d,
@@ -488,6 +481,8 @@ export default class TweenAxis {
 			//            '\ndelta:'+d
 			//);
 			
+			if ( noEvents && this.__config[key].type === "Event" )
+				continue;
 			if ( this.__processors[key].go ) {
 				//console.log("in " + pos, d);
 				this.__processors[key].go(pos, 0, true);//reset local fork
@@ -526,6 +521,8 @@ export default class TweenAxis {
 			//            +'\ninnerpos:'+(pos * (this.localLength || 1)) /
 			// abs(this.__marksLength[p]) +'\ndelta:'+(diff * (this.localLength || 1)) /
 			// abs(this.__marksLength[p]) );
+			if ( noEvents && this.__config[key].type === "Event" )
+				continue;
 			if ( this.__processors[key].go ) {
 				
 				this.__processors[key].go(
