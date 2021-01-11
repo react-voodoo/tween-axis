@@ -30,6 +30,9 @@ module.exports           = function ( _scope, cfg, target ) {
 			if ( lastPos === 0 || lastPos === 1 )
 				cfg.entering(update);
 		}
+		if ( cfg.moveTo ) {
+			cfg.moveTo(lastPos + update, lastPos, update);
+		}
 		if ( cfg.leaving ) {
 			if ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )
 				cfg.leaving(update);
