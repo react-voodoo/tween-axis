@@ -25,17 +25,19 @@
  */
 
 module.exports           = function ( _scope, cfg, target ) {
-	return ( lastPos, update, scope, cfg, target ) => {
-		if ( cfg.entering ) {
-			if ( lastPos === 0 || lastPos === 1 )
-				cfg.entering(update);
-		}
-		if ( cfg.moveTo ) {
-			cfg.moveTo(lastPos + update, lastPos, update);
-		}
-		if ( cfg.leaving ) {
-			if ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )
-				cfg.leaving(update);
+	return ( lastPos, update, scope, cfg, target, noEvents ) => {
+		if ( !noEvents ) {
+			if ( cfg.entering ) {
+				if ( lastPos === 0 || lastPos === 1 )
+					cfg.entering(update);
+			}
+			if ( cfg.moveTo ) {
+				cfg.moveTo(lastPos + update, lastPos, update);
+			}
+			if ( cfg.leaving ) {
+				if ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )
+					cfg.leaving(update);
+			}
 		}
 	};
 };

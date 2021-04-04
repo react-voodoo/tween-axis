@@ -25,24 +25,38 @@
  */
 
 module.exports           = function ( _scope, cfg, target ) {
-	var fn = "";
+	var fn = `
+	if (!noEvents){
+		if ( cfg.entering ) {
+			if ( lastPos === 0 || lastPos === 1 )
+				cfg.entering(update);
+		}
+		if ( cfg.moving ) {
+			cfg.moving(lastPos + update, lastPos, update);
+		}
+		if ( cfg.leaving ) {
+			if ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )
+				cfg.leaving(update);
+		}
+	}
+	`;
 	
 	target && (fn += "scope = scope['" + target + "'];\n");
-	
-	for ( var k in cfg.apply )
-		if ( cfg.apply.hasOwnProperty(k) ) {
-			
-			_scope && (_scope[k] = _scope[k] || 0);
-			
-			fn += "scope." + k + "+=(" +
-				(
-					cfg.easeFn ?
-					"cfg.easeFn(lastPos+update)" +
-						"- cfg.easeFn(lastPos)"
-					           :
-					"update"
-				) + ") * cfg.apply." + k + ";";
-		}
-	return new Function("lastPos, update, scope, cfg, target", fn);
+	if ( cfg.apply )
+		for ( var k in cfg.apply )
+			if ( cfg.apply.hasOwnProperty(k) ) {
+				
+				_scope && (_scope[k] = _scope[k] || 0);
+				
+				fn += "scope." + k + "+=(" +
+					(
+						cfg.easeFn ?
+						"cfg.easeFn(lastPos+update)" +
+							"- cfg.easeFn(lastPos)"
+						           :
+						"update"
+					) + ") * cfg.apply." + k + ";";
+			}
+	return new Function("lastPos, update, scope, cfg, target, noEvents", fn);
 };
 module.exports.isFactory = true;

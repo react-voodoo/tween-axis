@@ -94,6 +94,8 @@ export default class TweenAxis {
 		}
 	};
 	
+	static LineTypes = lineTypes;
+	
 	constructor( cfg, scope ) {
 		this.scope         = scope;
 		cfg                = cfg || {};
@@ -183,7 +185,7 @@ export default class TweenAxis {
 				factory = map[i].apply.fork(null, map[i], map[i].easeFn);
 			}
 			else {
-				factory = lineTypes[map[i].type || 'Tween'];
+				factory = TweenAxis.LineTypes[map[i].type || 'Tween'];
 			}
 			if ( !factory ) {
 				console.log('TweenAxis : Anim not found : ' + map[i].type);
@@ -420,13 +422,12 @@ export default class TweenAxis {
 			//            '\ndelta:'+d
 			//);
 			
-			if ( noEvents && this.__config[key].type === "Event" )
-				continue;
 			if ( this.__processors[key].go ) {
 				this.__processors[key].go(
 					pos + d,
 					scope,
-					reset
+					reset,
+					noEvents
 				);
 			}
 			else
@@ -436,7 +437,8 @@ export default class TweenAxis {
 					scope,
 					this.__config[key],
 					this.__config[key].target || (this.__config[key].$target && this.__context &&
-						this.__context[this.__config[key].$target])
+						this.__context[this.__config[key].$target]),
+					noEvents
 				);
 		}
 		
@@ -481,14 +483,13 @@ export default class TweenAxis {
 			//            '\ndelta:'+d
 			//);
 			
-			if ( noEvents && this.__config[key].type === "Event" )
-				continue;
+			
 			if ( this.__processors[key].go ) {
 				//console.log("in " + pos, d);
-				this.__processors[key].go(pos, 0, true);//reset local fork
+				this.__processors[key].go(pos, 0, true, noEvents);//reset local fork
 				this.__processors[key].go(
 					pos + d,
-					scope
+					scope, false, noEvents
 				);
 			}
 			else if ( !reset )
@@ -497,8 +498,12 @@ export default class TweenAxis {
 					d,
 					scope,
 					this.__config[key],
-					this.__config[key].target || (this.__config[key].$target && this.__context &&
-						this.__context[this.__config[key].$target])
+					this.__config[key].target ||
+						(
+							this.__config[key].$target && this.__context &&
+							this.__context[this.__config[key].$target]
+						),
+					noEvents
 				);
 		}
 		// and those who where already there
@@ -521,13 +526,12 @@ export default class TweenAxis {
 			//            +'\ninnerpos:'+(pos * (this.localLength || 1)) /
 			// abs(this.__marksLength[p]) +'\ndelta:'+(diff * (this.localLength || 1)) /
 			// abs(this.__marksLength[p]) );
-			if ( noEvents && this.__config[key].type === "Event" )
-				continue;
 			if ( this.__processors[key].go ) {
-				
 				this.__processors[key].go(
 					pos + d,
-					scope
+					scope,
+					false,
+					noEvents
 				);
 			}
 			else if ( !reset )
@@ -538,7 +542,8 @@ export default class TweenAxis {
 					this.__config[key],
 					this.__config[key].target ||
 						(this.__config[key].$target && this.__context &&
-							this.__context[this.__config[key].$target])
+							this.__context[this.__config[key].$target]),
+					noEvents
 				);
 		}
 		
