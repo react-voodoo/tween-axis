@@ -30,7 +30,6 @@
  * Scalable, multiscope, reversible, delta based, interpolation/tweening engine
  * @author Nathanael BRAUN
  * @contact n8tz.js@gmail.com
- * @licence AGPL-3.0
  */
 import is        from "is";
 import lineTypes from "./lines/(*).js";
@@ -56,7 +55,7 @@ let
 
 export default class TweenAxis {
 	
-	static Runner = {
+	static Runner    = {
 		run  : function ( tl, ctx, duration, cb ) {
 			let apply = ( pos, size ) => tl.go(pos / size, ctx);
 			_running.push({ apply, duration, cpos: 0, cb });
@@ -93,7 +92,7 @@ export default class TweenAxis {
 			}
 		}
 	};
-	
+	static center    = 10000000000;
 	static LineTypes = lineTypes;
 	
 	constructor( cfg, scope ) {
@@ -181,21 +180,22 @@ export default class TweenAxis {
 		for ( i = 0, ln = map.length; i < ln; i++ ) {
 			if ( is.string(map[i].easeFn) )
 				map[i] = { ...map[i], easeFn: easingFN[map[i].easeFn] || false };
-			if ( map[i].type == "Subline" ) {
+			if ( map[i].type === "Subline" ) {
 				factory = map[i].apply.fork(null, map[i], map[i].easeFn);
 			}
 			else {
 				factory = TweenAxis.LineTypes[map[i].type || 'Tween'];
 			}
 			if ( !factory ) {
-				console.log('TweenAxis : Anim not found : ' + map[i].type);
+				console.log('TweenAxis : Line type not found : ' + map[i].type, "\n Available : " + Object.keys(TweenAxis.LineTypes));
 				continue;
 			}
-			if ( !is.number(map[i].from) )
-				// no from so assume it's sync
+			if ( !is.number(map[i].from) ) {// no from so assume it's sync
 				this.addProcess(
 					d, d + map[i].duration, factory, map[i]
-				), d += map[i].duration || 0;
+				);
+				d += map[i].duration || 0;
+			}
 			else// have from so assume it's async
 				this.addProcess(map[i].from, map[i].from + map[i].duration, factory, map[i])
 					, max = Math.max(max, map[i].from + map[i].duration);
@@ -229,9 +229,11 @@ export default class TweenAxis {
 	 * @param cfg
 	 * @returns {TweenAxis}
 	 */
-	addProcess( from, to, process, cfg ) {
+	addProcess( _from, _to, process, cfg ) {
 		let i    = 0,
 		    _ln  = process.localLength,
+		    from = TweenAxis.center + _from,
+		    to   = TweenAxis.center + _to,
 		    ln   = (to - from) || 0,
 		    key  = this.__cMaxKey++,
 		    isTl = process instanceof TweenAxis;
@@ -291,11 +293,12 @@ export default class TweenAxis {
 	 * @param scope
 	 * @param reset
 	 */
-	goTo( to, scope, reset, noEvents ) {
+	goTo( initial_to, scope, reset, noEvents ) {
 		scope = scope || this.scope;
-		if ( this.window )
-			to = this.window.start + (to / this.duration) * this.window.length;
 		
+		let to = TweenAxis.center + initial_to;
+		
+		//console.log('addProcess::addProcess:240: ', initial_to);
 		if ( !this._started ) {
 			this._started = true;
 			this.__cIndex = this.__cPos = 0;
@@ -309,7 +312,9 @@ export default class TweenAxis {
 		    pos, _from, _to,
 		    d, key,
 		    maxMarkerIndex     = this.__marks.length,
-		    delta              = to - this.__cPos;
+		    cPos               = TweenAxis.center + this.__cPos,
+		    delta              = to - cPos;
+		
 		if ( reset ) {
 			this.__activeProcess.length = 0;
 			this.__outgoing.length      = 0;
@@ -326,23 +331,23 @@ export default class TweenAxis {
 		// 1st ajust period, knowing which process are involved / leaving
 		// while my indice target a marker/time period inferior to my pos
 		
-		while ( currentMarkerIndex < maxMarkerIndex && to > this.__marks[currentMarkerIndex] || (delta >= 0 && this.__marks[currentMarkerIndex] == to) ) {
+		while ( currentMarkerIndex < maxMarkerIndex && to > this.__marks[currentMarkerIndex] || (delta >= 0 && this.__marks[currentMarkerIndex] === to) ) {
 			
 			// if next marker is ending an active process
-			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
+			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1 ) {
 				this.__activeProcess.splice(p, 1);
 				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close " + this.__marksKeys[i]);
 			}
 				// if next marker is process ending a process who just start (direction has
 			// change)
-			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) != -1 ) {
+			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) !== -1 ) {
 				this.__activeProcess.splice(p, 1);
 				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close after dir change" + this.__marksKeys[i]);
 			}
 			// if next marker is process ending a process who just start
-			else if ( (p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
+			else if ( (p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1 ) {
 				incoming.splice(p, 1);
 				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close starting " + this.__marksKeys[i]);
@@ -356,23 +361,23 @@ export default class TweenAxis {
 		
 		// while my indice-1 target a marker/time period superior to my pos
 		while (
-			(currentMarkerIndex - 1) >= 0 && (to < this.__marks[currentMarkerIndex - 1] || ((delta < 0) && this.__marks[currentMarkerIndex - 1] == to))
+			(currentMarkerIndex - 1) >= 0 && (to < this.__marks[currentMarkerIndex - 1] || ((delta < 0) && this.__marks[currentMarkerIndex - 1] === to))
 			) {
 			currentMarkerIndex--;
 			
-			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
+			if ( (p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1 ) {
 				this.__activeProcess.splice(p, 1);
 				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("left say out " + this.__marksKeys[i]);
 				
 			}// if next marker is process ending a process who just start (direction has
 			 // change)
-			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) != -1 ) {
+			else if ( (p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) !== -1 ) {
 				this.__activeProcess.splice(p, 1);
 				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("close after dir change" + this.__marksKeys[i]);
 			}
-			else if ( (p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) != -1 ) {
+			else if ( (p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1 ) {
 				incoming.splice(p, 1);
 				outgoing.push(this.__marksKeys[currentMarkerIndex]);
 				//console.log("left say out from incoming " + this.__marksKeys[i]);
@@ -394,7 +399,7 @@ export default class TweenAxis {
 			if ( outgoing[currentMarkerIndex] < 0 ) {
 				_from = Math.min(
 					this.__marks[p],
-					Math.max(this.__cPos, this.__marks[p] - this.__marksLength[key])
+					Math.max(cPos, this.__marks[p] - this.__marksLength[key])
 				) - (this.__marks[p] - this.__marksLength[key]);
 				_to   = this.__marksLength[key];
 				pos   = _from;
@@ -405,7 +410,7 @@ export default class TweenAxis {
 			else {
 				_from = Math.max(
 					this.__marks[p],
-					Math.min(this.__cPos, this.__marks[p] + this.__marksLength[key])
+					Math.min(cPos, this.__marks[p] + this.__marksLength[key])
 				) - this.__marks[p];
 				_to   = 0;
 				pos   = _from;
@@ -452,7 +457,7 @@ export default class TweenAxis {
 				_from = this.__marksLength[key];
 				_to   = Math.max(
 					this.__marks[p] - this.__marksLength[key],
-					Math.min(this.__cPos + delta, this.__marks[p])
+					Math.min(cPos + delta, this.__marks[p])
 				) - (this.__marks[p] - this.__marksLength[key]);
 				
 				pos = _from;
@@ -464,7 +469,7 @@ export default class TweenAxis {
 				_from = 0;
 				_to   = Math.max(
 					this.__marks[p],
-					Math.min(this.__cPos + delta, this.__marks[p] + this.__marksLength[key])
+					Math.min(cPos + delta, this.__marks[p] + this.__marksLength[key])
 				) - this.__marks[p];
 				pos   = _from;
 				d     = _to - _from;
@@ -514,8 +519,8 @@ export default class TweenAxis {
 			
 			//d = (this.__cPos - diff)<this.__marks[p]?this.__cPos-this.__marks[p] : diff;
 			pos = this.__activeProcess[currentMarkerIndex] < 0
-			      ? this.__cPos - (this.__marks[p] - this.__marksLength[key])
-			      : (this.__cPos - this.__marks[p]);
+			      ? cPos - (this.__marks[p] - this.__marksLength[key])
+			      : (cPos - this.__marks[p]);
 			pos = (this.localLength || 1) * (pos) / this.__marksLength[key];
 			d   = (delta * (this.localLength || 1)) / this.__marksLength[key];
 			//console.log("active " + p + " " + this.__marksLength[p]
@@ -553,8 +558,10 @@ export default class TweenAxis {
 		outgoing.length = 0;
 		incoming.length = 0;
 		
-		this.__cPos = to;
-		this.onScopeUpdated && this.onScopeUpdated(to, delta, scope);
+		this.__cPos = initial_to;
+		this.onScopeUpdated && this.onScopeUpdated(this.__cPos, delta, scope);
+		
+		return scope;
 	}
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "tween-axis",
-  "version": "1.2.15",
+  "version": "1.2.16",
   "license": "MIT",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast additive tween composition engine",
