@@ -1,3 +1,5 @@
+"use strict";
+
 /*
  *   The MIT License (MIT)
  *   Copyright (c) 2023. Nathanael Braun
@@ -23,7 +25,20 @@
  *   @author : Nathanael Braun
  *   @contact : n8tz.js@gmail.com
  */
-
-import _tweenAxis from "./TweenAxis";
-
-module.exports = _tweenAxis;
+var isValidKey = /^[a-zA-Z\d\-\_]*$/;
+module.exports = function (_scope, cfg, target) {
+  var fn = "\n\tif (!noEvents){\n\t";
+  if (cfg.entering)
+    // only add code if the functions exists for perfs purpose
+    fn += "\n\t\tif ( lastPos === 0 || lastPos === 1 )\n\t\t\tcfg.entering(update);\n\t\t";
+  if (cfg.moving) fn += "\n\t\t\tcfg.moving(lastPos + update, lastPos, update);\n\t\t";
+  if (cfg.leaving) fn += "\n\t\tif ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )\n\t\t\t\tcfg.leaving(update);\n\t\t";
+  fn += "\n\t}\n\t";
+  target && (fn += "scope = scope['" + target + "'];\n");
+  if (cfg.apply) for (var k in cfg.apply) if (cfg.apply.hasOwnProperty(k) && isValidKey.test(k)) {
+    _scope && (_scope[k] = _scope[k] || 0);
+    fn += "scope." + k + "+=(" + (cfg.easeFn ? "cfg.easeFn(lastPos+update)" + "- cfg.easeFn(lastPos)" : "update") + ") * cfg.apply." + k + ";";
+  }
+  return new Function("lastPos, update, scope, cfg, target, noEvents", fn);
+};
+module.exports.isFactory = true;

@@ -1,6 +1,6 @@
 /*
  *   The MIT License (MIT)
- *   Copyright (c) 2020. Nathanael Braun
+ *   Copyright (c) 2023. Nathanael Braun
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
@@ -23,28 +23,35 @@
  *   @author : Nathanael Braun
  *   @contact : n8tz.js@gmail.com
  */
+const isValidKey = /^[a-zA-Z\d\-\_]*$/;
 
 module.exports           = function ( _scope, cfg, target ) {
-	var fn = `
+	let fn = `
 	if (!noEvents){
-		if ( cfg.entering ) {
-			if ( lastPos === 0 || lastPos === 1 )
-				cfg.entering(update);
-		}
-		if ( cfg.moving ) {
+	`;
+	if ( cfg.entering )// only add code if the functions exists for perfs purpose
+		fn += `
+		if ( lastPos === 0 || lastPos === 1 )
+			cfg.entering(update);
+		`;
+	if ( cfg.moving )
+		fn += `
 			cfg.moving(lastPos + update, lastPos, update);
-		}
-		if ( cfg.leaving ) {
-			if ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )
+		`;
+	if ( cfg.leaving )
+		fn += `
+		if ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )
 				cfg.leaving(update);
-		}
+		`;
+	fn +=
+		`
 	}
 	`;
 	
 	target && (fn += "scope = scope['" + target + "'];\n");
 	if ( cfg.apply )
 		for ( var k in cfg.apply )
-			if ( cfg.apply.hasOwnProperty(k) ) {
+			if ( cfg.apply.hasOwnProperty(k) && isValidKey.test(k) ) {
 				
 				_scope && (_scope[k] = _scope[k] || 0);
 				

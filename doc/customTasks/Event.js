@@ -1,6 +1,6 @@
 /*
  *   The MIT License (MIT)
- *   Copyright (c) 2020. Nathanael Braun
+ *   Copyright (c) 2023. Nathanael Braun
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,9 @@
  *   @contact : n8tz.js@gmail.com
  */
 
-module.exports           = function ( _scope, cfg, target ) {
+import TweenAxis from "tween-axis";
+
+TweenAxis.LineTypes.Event           = function ( _scope, cfg, target ) {
 	return ( lastPos, update, scope, cfg, target, noEvents ) => {
 		if ( !noEvents ) {
 			if ( cfg.entering ) {
@@ -41,4 +43,4 @@ module.exports           = function ( _scope, cfg, target ) {
 		}
 	};
 };
-module.exports.isFactory = true;
+TweenAxis.LineTypes.Event.isFactory = true;

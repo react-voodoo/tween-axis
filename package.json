@@ -1,41 +1,19 @@
 {
   "name": "tween-axis",
-  "version": "1.2.16",
+  "version": "2.0.0",
   "license": "MIT",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
-  "description": "Fast additive tween composition engine",
+  "description": "Fast, additive & delta based tween composition engine",
   "repository": "https://github.com/react-voodoo/tween-axis",
-  "main": "dist/tween-axis.js",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "lpack"
-  },
-  "layerPack": {
-    "default": {
-      "rootFolder": "src",
-      "basedOn": "component",
-      "vars": {
-        "rootAlias": "tween-axis",
-        "production": true,
-        "externals": true,
-        "webpackPatch": {
-          "optimization": {
-            "usedExports": true
-          }
-        }
-      },
-      "extend": [
-        "lpack-react"
-      ]
-    }
+    "build": "babel src -d dist"
   },
   "dependencies": {
-    "@babel/runtime": "^7.3.1",
-    "d3-ease": "^1.0.5",
-    "is": "^3.2.1",
-    "point-at-length": "^1.0.1"
   },
   "devDependencies": {
-    "lpack-react": "^1.3.3",
-    "layer-pack": "^1.2.16"
+    "@babel/cli": "^7.20.7",
+    "@babel/core": "^7.20.12",
+    "@babel/preset-env": "^7.20.2"
   }
 }

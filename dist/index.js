@@ -1,3 +1,7 @@
+"use strict";
+
+var _TweenAxis = _interopRequireDefault(require("./TweenAxis"));
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 /*
  *   The MIT License (MIT)
  *   Copyright (c) 2023. Nathanael Braun
@@ -24,6 +28,4 @@
  *   @contact : n8tz.js@gmail.com
  */
 
-import _tweenAxis from "./TweenAxis";
-
-module.exports = _tweenAxis;
+module.exports = _TweenAxis["default"];

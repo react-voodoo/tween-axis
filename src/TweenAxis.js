@@ -1,6 +1,6 @@
 /*
  *   The MIT License (MIT)
- *   Copyright (c) 2020. Nathanael Braun
+ *   Copyright (c) 2023. Nathanael Braun
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
@@ -31,69 +31,27 @@
  * @author Nathanael BRAUN
  * @contact n8tz.js@gmail.com
  */
-import is        from "is";
-import lineTypes from "./lines/(*).js";
+import defaultLineType from "./lines/Tween.js";
+import Runner          from "./utils/Runner.js";
 
-const easingFN        = require("d3-ease"),
-      slice           = Array.prototype.slice,
-      push            = Array.prototype.push,
-      abs             = Math.abs,
-      ForkedTweenAxis = function ( cfg ) {
-	      this.__cPos          = 0;
-	      this.__cIndex        = 0;
-	      this.onScopeUpdated  = false;
-	      this.__activeProcess = [];
-	      this.__outgoing      = [];
-	      this.__incoming      = [];
+const slice = Array.prototype.slice,
+      push  = Array.prototype.push,
+      abs   = Math.abs,
+      is    = {
+	      array : ( obj ) => Array.isArray(obj),
+	      number: ( obj ) => typeof obj === "number",
+	      string: ( obj ) => typeof obj === "string"
       };
 
-let
-	// runner
-	_live    = false,
-	lastTm,
-	_running = [];
 
 export default class TweenAxis {
 	
-	static Runner    = {
-		run  : function ( tl, ctx, duration, cb ) {
-			let apply = ( pos, size ) => tl.go(pos / size, ctx);
-			_running.push({ apply, duration, cpos: 0, cb });
-			tl.go(0, ctx, true);//reset tl
-			
-			if ( !_live ) {
-				_live  = true;
-				lastTm = Date.now();
-				// console.log("TL runner On");
-				setTimeout(this._tick, 16);
-			}
-		},
-		_tick: function _tick() {
-			let i  = 0, o, tm = Date.now(), delta = tm - lastTm;
-			lastTm = tm;
-			for ( ; i < _running.length; i++ ) {
-				_running[i].cpos = Math.min(delta + _running[i].cpos, _running[i].duration);//cpos
-				_running[i].apply(
-					_running[i].cpos, _running[i].duration
-				);
-				// console.log("TL runner ",_running[i][3]);
-				if ( _running[i].cpos == _running[i].duration ) {
-					
-					_running[i].cb && setTimeout(_running[i].cb);
-					_running.splice(i, 1), i--;
-				}
-				
-			}
-			if ( _running.length )
-				setTimeout(_tick, 16);
-			else {
-				// console.log("TL runner Off");
-				_live = false;
-			}
-		}
+	static Runner          = Runner;
+	static center          = 10000000000;
+	static LineTypes       = {
+		Tween: defaultLineType
 	};
-	static center    = 10000000000;
-	static LineTypes = lineTypes;
+	static EasingFunctions = {};
 	
 	constructor( cfg, scope ) {
 		this.scope         = scope;
@@ -104,7 +62,6 @@ export default class TweenAxis {
 		this.__processors  = [];
 		this.__config      = [];
 		
-		this.__activeForks   = [];
 		this.__activeProcess = [];
 		
 		this.__activeProcess = [];
@@ -118,7 +75,6 @@ export default class TweenAxis {
 			this.mount(cfg, scope);
 		}
 		else {
-			//Object.assign(this, cfg);
 			if ( cfg.TweenAxis )
 				this.mount(cfg.TweenAxis, scope);
 		}
@@ -148,8 +104,7 @@ export default class TweenAxis {
 	runTo( to, tm, easing = x => x, tick, cb ) {
 		let from   = this.__cPos,
 		    length = to - from;
-		
-		_running.push(
+		TweenAxis.Runner.push(
 			{
 				apply   : ( pos, max ) => {
 					let x = (from + (easing(pos / max)) * length);
@@ -159,15 +114,8 @@ export default class TweenAxis {
 				duration: tm,
 				cpos    : 0,
 				cb
-			})
-		;
-		
-		if ( !_live ) {
-			_live  = true;
-			lastTm = Date.now();
-			// console.log("TL runner On");
-			setTimeout(TweenAxis.Runner._tick, 16);
-		}
+			}
+		)
 	}
 	
 	/**
@@ -179,13 +127,10 @@ export default class TweenAxis {
 		let i, ln, d = this.duration || 0, p = 0, max = 0, factory;
 		for ( i = 0, ln = map.length; i < ln; i++ ) {
 			if ( is.string(map[i].easeFn) )
-				map[i] = { ...map[i], easeFn: easingFN[map[i].easeFn] || false };
-			if ( map[i].type === "Subline" ) {
-				factory = map[i].apply.fork(null, map[i], map[i].easeFn);
-			}
-			else {
-				factory = TweenAxis.LineTypes[map[i].type || 'Tween'];
-			}
+				map[i] = { ...map[i], easeFn: TweenAxis.EasingFunctions[map[i].easeFn] || false };
+			
+			factory = TweenAxis.LineTypes[map[i].type || 'Tween'];
+			
 			if ( !factory ) {
 				console.log('TweenAxis : Line type not found : ' + map[i].type, "\n Available : " + Object.keys(TweenAxis.LineTypes));
 				continue;
@@ -207,20 +152,6 @@ export default class TweenAxis {
 	}
 	
 	/**
-	 * Clone this TweenAxis
-	 * @method fork
-	 * @param fn
-	 * @param ctx
-	 * @param easeFn
-	 * @returns {ForkedTweenAxis}
-	 */
-	fork( cfg ) {
-		this._masterLine          = this._masterLine || this;
-		ForkedTweenAxis.prototype = this._masterLine;// todo: this should not work
-		return new ForkedTweenAxis(cfg);
-	}
-	
-	/**
 	 * Map a process descriptor
 	 * @method addProcess
 	 * @param from
@@ -235,13 +166,8 @@ export default class TweenAxis {
 		    from = TweenAxis.center + _from,
 		    to   = TweenAxis.center + _to,
 		    ln   = (to - from) || 0,
-		    key  = this.__cMaxKey++,
-		    isTl = process instanceof TweenAxis;
+		    key  = this.__cMaxKey++;
 		
-		if ( isTl )
-			process = process.fork(null, cfg);
-		
-		this.__activeForks[key] = true;
 		this.__processors[key]  = process.isFactory
 		                          ? process(null, cfg, cfg.target)
 		                          : process;
@@ -284,7 +210,6 @@ export default class TweenAxis {
 		return scope || this.scope;
 	}
 	
-	
 	/**
 	 * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
 	 * using the mapped TweenAxis length
@@ -298,7 +223,6 @@ export default class TweenAxis {
 		
 		let to = TweenAxis.center + initial_to;
 		
-		//console.log('addProcess::addProcess:240: ', initial_to);
 		if ( !this._started ) {
 			this._started = true;
 			this.__cIndex = this.__cPos = 0;
@@ -442,7 +366,7 @@ export default class TweenAxis {
 					scope,
 					this.__config[key],
 					this.__config[key].target || (this.__config[key].$target && this.__context &&
-						this.__context[this.__config[key].$target]),
+							this.__context[this.__config[key].$target]),
 					noEvents
 				);
 		}
