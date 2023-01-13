@@ -40,8 +40,8 @@ module.exports           = function ( _scope, cfg, target ) {
 		`;
 	if ( cfg.leaving )
 		fn += `
-		if ( lastPos !== 0 && lastPos !== 1 && (lastPos + update === 0 || lastPos + update === 1) )
-				cfg.leaving(update);
+		if ( (lastPos + update === 0 || lastPos + update === 1) )
+			cfg.leaving(update);
 		`;
 	fn +=
 		`

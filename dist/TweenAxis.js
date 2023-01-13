@@ -232,13 +232,6 @@ var TweenAxis = /*#__PURE__*/function () {
         this.__activeProcess.length = 0;
         this.__outgoing.length = 0;
         this.__incoming.length = 0;
-        // reset forks
-        //console.log('reset ', to);
-        //for ( i = 0, ln = this.__processors.length ; i < ln ; i++ ) {
-        //    if (this.__processors[i] instanceof TweenAxis){
-        //        this.__processors[i].goTo(0,0,true);
-        //    }
-        //}
       }
 
       // 1st ajust period, knowing which process are involved / leaving
@@ -289,7 +282,7 @@ var TweenAxis = /*#__PURE__*/function () {
           outgoing.push(this.__marksKeys[currentMarkerIndex]);
           //console.log("left say out from incoming " + this.__marksKeys[i]);
         } else {
-          //console.log("left say in " + this.__marksKeys[i]);
+          //console.log("left say in " + this.__marksKeys[currentMarkerIndex]);
           incoming.push(this.__marksKeys[currentMarkerIndex]);
         }
       }
@@ -325,9 +318,7 @@ var TweenAxis = /*#__PURE__*/function () {
         //            '\ndelta:'+d
         //);
 
-        if (this.__processors[key].go) {
-          this.__processors[key].go(pos + d, scope, reset, noEvents);
-        } else this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
+        this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
       }
 
       // those entering subline
@@ -360,11 +351,7 @@ var TweenAxis = /*#__PURE__*/function () {
         //            '\ndelta:'+d
         //);
 
-        if (this.__processors[key].go) {
-          //console.log("in " + pos, d);
-          this.__processors[key].go(pos, 0, true, noEvents); //reset local fork
-          this.__processors[key].go(pos + d, scope, false, noEvents);
-        } else if (!reset) this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
+        if (!reset) this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
       }
       // and those who where already there
       //if ( !reset )
@@ -384,9 +371,7 @@ var TweenAxis = /*#__PURE__*/function () {
         //            +'\ninnerpos:'+(pos * (this.localLength || 1)) /
         // abs(this.__marksLength[p]) +'\ndelta:'+(diff * (this.localLength || 1)) /
         // abs(this.__marksLength[p]) );
-        if (this.__processors[key].go) {
-          this.__processors[key].go(pos + d, scope, false, noEvents);
-        } else if (!reset) this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
+        if (!reset) this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
       }
       push.apply(this.__activeProcess, incoming);
       outgoing.length = 0;
