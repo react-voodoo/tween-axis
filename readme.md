@@ -23,12 +23,6 @@ Tween Axis is a delta-based interpolation engine that solves this problem, it al
 - Get the delta of multiples values basing a timeline position
 - Etc...
 
-Here an example of the composed values from two functions/tween :
-<p align="center">
-<img src="doc/additiveChart.png" alt="Npm version" /><br/>
-<i>( Tween Axis can compose as many sources as wanted )</i>
-</p>
-
 ## Really basic example :
 
 ```jsx harmony
