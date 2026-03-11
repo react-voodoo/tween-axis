@@ -24,6 +24,6 @@
  *   @contact : n8tz.js@gmail.com
  */
 
-import _tweenAxis from "./TweenAxis";
+import _tweenAxisWasm from "./TweenAxisWasm";
 
-module.exports = _tweenAxis;
+module.exports = _tweenAxisWasm;

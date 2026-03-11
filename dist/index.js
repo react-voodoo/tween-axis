@@ -1,6 +1,6 @@
 "use strict";
 
-var _TweenAxis = _interopRequireDefault(require("./TweenAxis"));
+var _TweenAxisWasm = _interopRequireDefault(require("./TweenAxisWasm"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 /*
  *   The MIT License (MIT)
@@ -28,4 +28,4 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
  *   @contact : n8tz.js@gmail.com
  */
 
-module.exports = _TweenAxis["default"];
+module.exports = _TweenAxisWasm["default"];

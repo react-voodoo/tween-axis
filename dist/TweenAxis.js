@@ -4,9 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports["default"] = void 0;
-var _Tween = _interopRequireDefault(require("./lines/Tween.js"));
-var _Runner = _interopRequireDefault(require("./utils/Runner.js"));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
@@ -16,8 +13,41 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
 function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
-var slice = Array.prototype.slice,
-  push = Array.prototype.push,
+/*
+ *   The MIT License (MIT)
+ *   Copyright (c) 2023. Nathanael Braun
+ *
+ *   Permission is hereby granted, free of charge, to any person obtaining a copy
+ *   of this software and associated documentation files (the "Software"), to deal
+ *   in the Software without restriction, including without limitation the rights
+ *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *   copies of the Software, and to permit persons to whom the Software is
+ *   furnished to do so, subject to the following conditions:
+ *
+ *   The above copyright notice and this permission notice shall be included in all
+ *   copies or substantial portions of the Software.
+ *
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *   SOFTWARE.
+ *
+ *   @author : Nathanael Braun
+ *   @contact : n8tz.js@gmail.com
+ */
+
+/**
+ * #  tweenAxis
+ *
+ * Scalable, multiscope, reversible, delta based, interpolation/tweening engine
+ * @author Nathanael BRAUN
+ * @contact n8tz.js@gmail.com
+ */
+
+var push = Array.prototype.push,
   abs = Math.abs,
   is = {
     array: function array(obj) {
@@ -29,7 +59,63 @@ var slice = Array.prototype.slice,
     string: function string(obj) {
       return typeof obj === "string";
     }
-  };
+  },
+  isValidKey = /^[a-zA-Z\d\-\_]*$/;
+var
+  // runner
+  _live = false,
+  lastTm,
+  _running = [];
+var Runner = {
+  push: function push(task) {
+    _running.push(task);
+    if (!_live) {
+      _live = true;
+      lastTm = Date.now();
+      // console.log("TL runner On");
+      setTimeout(Runner._tick, 16);
+    }
+  },
+  run: function run(tl, ctx, duration, cb) {
+    var apply = function apply(pos, size) {
+      return tl.go(pos / size, ctx);
+    };
+    _running.push({
+      apply: apply,
+      duration: duration,
+      cpos: 0,
+      cb: cb
+    });
+    tl.go(0, ctx, true); //reset tl
+
+    if (!_live) {
+      _live = true;
+      lastTm = Date.now();
+      // console.log("TL runner On");
+      setTimeout(this._tick, 16);
+    }
+  },
+  _tick: function _tick() {
+    var i = 0,
+      o,
+      tm = Date.now(),
+      delta = tm - lastTm;
+    lastTm = tm;
+    for (; i < _running.length; i++) {
+      _running[i].cpos = Math.min(delta + _running[i].cpos, _running[i].duration); //cpos
+      _running[i].apply(_running[i].cpos, _running[i].duration);
+      // console.log("TL runner ",_running[i][3]);
+      if (_running[i].cpos == _running[i].duration) {
+        _running[i].cb && setTimeout(_running[i].cb);
+        _running.splice(i, 1), i--;
+      }
+    }
+    if (_running.length) setTimeout(_tick, 16);else {
+      // console.log("TL runner Off");
+      _live = false;
+    }
+  }
+};
 var TweenAxis = /*#__PURE__*/function () {
   function TweenAxis(cfg, scope) {
     _classCallCheck(this, TweenAxis);
@@ -154,7 +240,7 @@ var TweenAxis = /*#__PURE__*/function () {
         to = TweenAxis.center + _to,
         ln = to - from || 0,
         key = this.__cMaxKey++;
-      this.__processors[key] = process.isFactory ? process(null, cfg, cfg.target) : process;
+      this.__processors[key] = process(null, cfg, cfg.target);
       this.__marksLength[key] = ln;
       this.__config[key] = cfg;
 
@@ -384,9 +470,23 @@ var TweenAxis = /*#__PURE__*/function () {
   return TweenAxis;
 }();
 exports["default"] = TweenAxis;
-_defineProperty(TweenAxis, "Runner", _Runner["default"]);
+_defineProperty(TweenAxis, "Runner", Runner);
 _defineProperty(TweenAxis, "center", 10000000000);
 _defineProperty(TweenAxis, "LineTypes", {
-  Tween: _Tween["default"]
+  Tween: function Tween(_scope, cfg, target) {
+    var fn = "\n\t\tif (!noEvents){\n\t\t";
+    if (cfg.entering)
+      // only add code if the functions exists for perfs purpose
+      fn += "\n\t\tif ( lastPos === 0 || lastPos === 1 )\n\t\t\tcfg.entering(update);\n\t\t";
+    if (cfg.moving) fn += "\n\t\t\tcfg.moving(lastPos + update, lastPos, update);\n\t\t";
+    if (cfg.leaving) fn += "\n\t\tif ( (lastPos + update === 0 || lastPos + update === 1) )\n\t\t\tcfg.leaving(update);\n\t\t";
+    fn += "\n\t}\n\t";
+    target && (fn += "scope = scope['" + target + "'];\n");
+    if (cfg.apply) for (var k in cfg.apply) if (cfg.apply.hasOwnProperty(k) && isValidKey.test(k)) {
+      _scope && (_scope[k] = _scope[k] || 0);
+      fn += "scope." + k + "+=(" + (cfg.easeFn ? "cfg.easeFn(lastPos+update)" + "- cfg.easeFn(lastPos)" : "update") + ") * cfg.apply." + k + ";";
+    }
+    return new Function("lastPos, update, scope, cfg, target, noEvents", fn);
+  }
 });
 _defineProperty(TweenAxis, "EasingFunctions", {});
