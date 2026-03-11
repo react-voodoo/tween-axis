@@ -4,15 +4,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports["default"] = void 0;
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
-function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 /*
  *   The MIT License (MIT)
  *   Copyright (c) 2023. Nathanael Braun
@@ -40,11 +40,79 @@ function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input ==
  */
 
 /**
- * #  tweenAxis
+ * TweenAxis — scalable, multiscope, reversible, delta-based interpolation engine.
  *
- * Scalable, multiscope, reversible, delta based, interpolation/tweening engine
- * @author Nathanael BRAUN
- * @contact n8tz.js@gmail.com
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Core concept: delta accumulation
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Most tween engines write *absolute* values: "set opacity to 0.7".
+ * TweenAxis writes *deltas*: "add 0.3 to whatever opacity already is".
+ *
+ * This makes it trivially composable: ten different axes can all contribute
+ * to the same property on the same object, and they simply add together.
+ * No ownership, no conflicts, full bidirectional scrubbing for free.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Internal data model
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Each process (tween descriptor) occupies a half-open interval [from, to) on a
+ * virtual number line.  The engine represents this as TWO sorted markers:
+ *
+ *   __marks[i]     — absolute position on the line (with CENTER offset applied)
+ *   __marksKeys[i] — process key: +k for a START marker, -k for an END marker
+ *
+ * Positive key  → "process k begins here"
+ * Negative key  → "process k ends here"
+ *
+ * The CENTER offset (1e10) shifts all coordinates to large positive numbers so
+ * that simple inequality comparisons always work correctly regardless of whether
+ * descriptor positions are zero, negative, or very small.
+ *
+ * Active-process tracking:
+ *   __activeProcess[] — array of POSITIVE keys for processes whose range
+ *                       currently contains the cursor position.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The goTo() algorithm in plain English
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Given a new cursor position `to` and the previous position `cPos`:
+ *
+ * 1. SCAN through the sorted markers to find which markers were crossed.
+ *    The scan runs forward when (to > cPos) and backward when (to < cPos).
+ *    For each marker crossed, classify the process into one of three buckets:
+ *
+ *    a) outgoing — was active, is now exiting (cursor left its range).
+ *    b) incoming — was inactive, cursor just entered its range this frame.
+ *    c) active   — was already running and still running (cursor stayed inside).
+ *
+ *    Direction changes (e.g. reversing mid-tween) are handled: a process whose
+ *    START marker is crossed in reverse is moved from active → outgoing.
+ *
+ * 2. DISPATCH deltas to each bucket:
+ *
+ *    Outgoing  → apply the partial delta from "where we were inside the range"
+ *                to "the boundary we just crossed" (either 0 or 1 normalized).
+ *                This ensures the process always completes cleanly.
+ *
+ *    Incoming  → apply the partial delta from "the boundary we just entered"
+ *                to "where the cursor landed inside the range".
+ *
+ *    Active    → apply the full frame delta, scaled to the process's local
+ *                coordinate system (normalized by marksLength).
+ *
+ * 3. Merge incoming into activeProcess, clear outgoing/incoming, update cPos.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Processor function contract
+ * ─────────────────────────────────────────────────────────────────────────────
+ * processor(lastPos, update, scope, cfg, target, noEvents)
+ *
+ *   lastPos  — normalised [0, 1] position within this process BEFORE the update
+ *   update   — normalised delta to apply (positive = forward, negative = reverse)
+ *   scope    — the accumulation object (mutated with +=)
+ *   cfg      — the original descriptor (for easeFn and callbacks)
+ *   target   — optional key to drill into scope[target] before writing
+ *   noEvents — suppress lifecycle callbacks when true (used during reset)
  */
 
 var push = Array.prototype.push,
@@ -60,22 +128,39 @@ var push = Array.prototype.push,
       return typeof obj === "string";
     }
   },
+  // Guard against property-name injection in the code-gen path
   isValidKey = /^[a-zA-Z\d\-\_]*$/;
 var
-  // runner
+  // ── Module-level Runner state ─────────────────────────────────────────────
+  // Shared across all TweenAxis instances (singleton loop).
   _live = false,
+  // true while the setTimeout loop is active
   lastTm,
-  _running = [];
+  // timestamp of the most recent tick
+  _running = []; // list of in-flight tasks
+
+/**
+ * Runner — lightweight setTimeout-based animation loop.
+ * Wakes up on first task and goes idle when the last task completes.
+ * Embedded here for zero-dependency use; also exported as TweenAxis.Runner.
+ */
 var Runner = {
+  /**
+   * push — enqueue a pre-built task `{ apply, duration, cpos, cb }`.
+   * Starts the loop if not already running.
+   */
   push: function push(task) {
     _running.push(task);
     if (!_live) {
       _live = true;
       lastTm = Date.now();
-      // console.log("TL runner On");
       setTimeout(Runner._tick, 16);
     }
   },
+  /**
+   * run — play a TweenAxis timeline forward from 0 to 1 over `duration` ms.
+   * Resets the timeline to position 0 before starting so all deltas begin clean.
+   */
   run: function run(tl, ctx, duration, cb) {
     var apply = function apply(pos, size) {
       return tl.go(pos / size, ctx);
@@ -86,15 +171,19 @@ var Runner = {
       cpos: 0,
       cb: cb
     });
-    tl.go(0, ctx, true); //reset tl
+    tl.go(0, ctx, true); // reset: drive all processors to their t=0 state
 
     if (!_live) {
       _live = true;
       lastTm = Date.now();
-      // console.log("TL runner On");
       setTimeout(this._tick, 16);
     }
   },
+  /**
+   * _tick — advance all running tasks by the elapsed wall-clock time.
+   * Tasks that reach `duration` are completed and removed.
+   * Reschedules itself until the queue is empty, then goes idle.
+   */
   _tick: function _tick() {
     var i = 0,
       o,
@@ -102,37 +191,48 @@ var Runner = {
       delta = tm - lastTm;
     lastTm = tm;
     for (; i < _running.length; i++) {
-      _running[i].cpos = Math.min(delta + _running[i].cpos, _running[i].duration); //cpos
+      // Advance by elapsed ms, clamped to total duration
+      _running[i].cpos = Math.min(delta + _running[i].cpos, _running[i].duration);
       _running[i].apply(_running[i].cpos, _running[i].duration);
-      // console.log("TL runner ",_running[i][3]);
       if (_running[i].cpos == _running[i].duration) {
+        // Fire completion callback asynchronously to avoid blocking this tick
         _running[i].cb && setTimeout(_running[i].cb);
         _running.splice(i, 1), i--;
       }
     }
     if (_running.length) setTimeout(_tick, 16);else {
-      // console.log("TL runner Off");
       _live = false;
     }
   }
 };
-var TweenAxis = /*#__PURE__*/function () {
+var TweenAxis = exports["default"] = /*#__PURE__*/function () {
+  // ── Constructor ───────────────────────────────────────────────────────────
+
   function TweenAxis(cfg, scope) {
     _classCallCheck(this, TweenAxis);
     this.scope = scope;
     cfg = cfg || {};
+
+    // ── Sorted marker arrays ─────────────────────────────────────────────
+    // __marks[i]      — absolute position (with CENTER offset)
+    // __marksKeys[i]  — process key: positive = start, negative = end
+    // Two entries per process, kept sorted by position.
     this.__marks = [];
-    this.__marksLength = [];
+    this.__marksLength = []; // duration (to - from) of process[key]
     this.__marksKeys = [];
-    this.__processors = [];
-    this.__config = [];
-    this.__activeProcess = [];
-    this.__activeProcess = [];
-    this.__outgoing = [];
-    this.__incoming = [];
-    this.__cPos = 0;
-    this.__cIndex = 0;
-    this.__cMaxKey = 1;
+
+    // ── Per-process data ─────────────────────────────────────────────────
+    this.__processors = []; // compiled processor functions, indexed by key
+    this.__config = []; // original descriptors, indexed by key
+
+    // ── Cursor state ─────────────────────────────────────────────────────
+    this.__activeProcess = []; // positive keys of processes currently in range
+    this.__outgoing = []; // scratch: processes that just left the range
+    this.__incoming = []; // scratch: processes that just entered the range
+    this.__cPos = 0; // current cursor position (without CENTER offset)
+    this.__cIndex = 0; // current index into __marks (tracks the scan position)
+    this.__cMaxKey = 1; // next available process key (auto-incremented)
+
     if (is.array(cfg)) {
       this.localLength = 1;
       this.mount(cfg, scope);
@@ -140,15 +240,20 @@ var TweenAxis = /*#__PURE__*/function () {
       if (cfg.TweenAxis) this.mount(cfg.TweenAxis, scope);
     }
   }
-  _createClass(TweenAxis, [{
+  return _createClass(TweenAxis, [{
     key: "destroy",
-    value: function destroy() {}
+    value: function destroy() {
+      // No resources to release in the JS implementation.
+      // TweenAxisWasm overrides this to release the WASM context slot.
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     /**
-     * Run this tween line from 0 to his duration using linear
-     * @param target
-     * @param cb
-     * @param tm
+     * run — play this timeline from 0 to its full duration over `tm` ms.
+     *
+     * Delegates to Runner.run, which resets the timeline and drives it forward
+     * linearly each tick.  `cb` is called when the animation completes.
      */
   }, {
     key: "run",
@@ -157,12 +262,17 @@ var TweenAxis = /*#__PURE__*/function () {
     }
 
     /**
-     * Tween this tween line to 'to' during 'tm' ms using easing fn
-     * @param to {int}
-     * @param tm {int} duration in ms
-     * @param easing {function} easing fn
-     * @param tick {function} fn called at each tick
-     * @param cb {function} fn called on complete
+     * runTo — animate the cursor from its current position to `to` over `tm` ms.
+     *
+     * The cursor moves along the easing curve between `from` and `to`.
+     * `tick` is called each frame with the current axis position.
+     * `cb` is called on completion.
+     *
+     * @param {number}   to      Target axis position.
+     * @param {number}   tm      Duration in ms.
+     * @param {function} easing  Normalised easing function (default: linear).
+     * @param {function} tick    Optional per-frame callback receiving current pos.
+     * @param {function} cb      Optional completion callback.
      */
   }, {
     key: "runTo",
@@ -188,9 +298,16 @@ var TweenAxis = /*#__PURE__*/function () {
     }
 
     /**
-     * Map process descriptors to get a runnable timeline
-     * @method mount
-     * @param map
+     * mount — parse an array of tween descriptors and register their processes.
+     *
+     * Handles two placement modes:
+     *   · Explicit `from` — process is placed at that absolute position (parallel).
+     *   · No `from`       — process is appended after the previous one (sequential).
+     *
+     * String `easeFn` ids are resolved against `TweenAxis.EasingFunctions` here.
+     * Unknown type ids emit a warning and are skipped.
+     *
+     * Updates `this.duration` to the furthest endpoint across all registered processes.
      */
   }, {
     key: "mount",
@@ -202,6 +319,7 @@ var TweenAxis = /*#__PURE__*/function () {
         max = 0,
         factory;
       for (i = 0, ln = map.length; i < ln; i++) {
+        // Resolve easing string → function once at mount time (not per-frame)
         if (is.string(map[i].easeFn)) map[i] = _objectSpread(_objectSpread({}, map[i]), {}, {
           easeFn: TweenAxis.EasingFunctions[map[i].easeFn] || false
         });
@@ -211,24 +329,36 @@ var TweenAxis = /*#__PURE__*/function () {
           continue;
         }
         if (!is.number(map[i].from)) {
-          // no from so assume it's sync
+          // Sequential: place at `d` (end of last descriptor), then advance `d`
           this.addProcess(d, d + map[i].duration, factory, map[i]);
           d += map[i].duration || 0;
-        } else
-          // have from so assume it's async
-          this.addProcess(map[i].from, map[i].from + map[i].duration, factory, map[i]), max = Math.max(max, map[i].from + map[i].duration);
+        } else {
+          // Parallel: place at explicit `from`, track the furthest endpoint
+          this.addProcess(map[i].from, map[i].from + map[i].duration, factory, map[i]);
+          max = Math.max(max, map[i].from + map[i].duration);
+        }
       }
       this.duration = Math.max(d, max);
       return this;
     }
 
     /**
-     * Map a process descriptor
-     * @method addProcess
-     * @param from
-     * @param to
-     * @param process
-     * @param cfg
+     * addProcess — register a single tween process at [_from, _to).
+     *
+     * Internal representation:
+     *   · Compiles the processor function via the line-type factory.
+     *   · Inserts TWO entries into the sorted `__marks` / `__marksKeys` arrays:
+     *       start marker at (CENTER + _from) with key  +k
+     *       end   marker at (CENTER + _to)   with key  -k
+     *   · Stores the duration in `__marksLength[k]`.
+     *
+     * The binary-search-like insertion keeps `__marks` sorted at all times,
+     * which is required for the forward/backward scan in `goTo`.
+     *
+     * @param {number}   _from    Start position on the user's coordinate system.
+     * @param {number}   _to      End position.
+     * @param {function} process  Line type factory function.
+     * @param {object}   cfg      The original descriptor.
      * @returns {TweenAxis}
      */
   }, {
@@ -237,29 +367,35 @@ var TweenAxis = /*#__PURE__*/function () {
       var i = 0,
         _ln = process.localLength,
         from = TweenAxis.center + _from,
+        // apply CENTER offset
         to = TweenAxis.center + _to,
         ln = to - from || 0,
-        key = this.__cMaxKey++;
+        // duration in internal coordinates
+        key = this.__cMaxKey++; // unique key for this process
+
+      // Compile the processor function (called by the factory)
       this.__processors[key] = process(null, cfg, cfg.target);
       this.__marksLength[key] = ln;
       this.__config[key] = cfg;
 
-      // put start marker in the ordered marker list
+      // ── Insert start marker into sorted __marks ──────────────────────────
+      // Walk forward until we find the right position, then splice in.
       while (i <= this.__marks.length && this.__marks[i] < from) i++;
       this.__marks.splice(i, 0, from);
-      this.__marksKeys.splice(i, 0, key);
+      this.__marksKeys.splice(i, 0, key); // positive key = start
 
-      // put end marker in the ordered marker list
+      // ── Insert end marker into sorted __marks ────────────────────────────
+      // Continue from where we left off (end is always ≥ start).
       while (i <= this.__marks.length && this.__marks[i] <= to) i++;
       this.__marks.splice(i, 0, to);
-      this.__marksKeys.splice(i, 0, -key);
+      this.__marksKeys.splice(i, 0, -key); // negative key = end
       return this;
     }
 
     /**
-     *
-     * @param key
-     * @returns {*}
+     * _getIndex — find the index of `key` in __marksKeys.
+     * Returns false if not found.
+     * Used to locate a marker's position so we can read its associated mark value.
      * @private
      */
   }, {
@@ -269,12 +405,16 @@ var TweenAxis = /*#__PURE__*/function () {
     }
 
     /**
-     * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
-     * using a TweenAxis length of 1
-     * @method go
-     * @param to
-     * @param scope
-     * @param reset
+     * go — move to a normalised position in [0, 1] (relative to total duration).
+     *
+     * Equivalent to `goTo(to * this.duration)`.  More convenient when you want
+     * to scrub by fraction rather than absolute axis units.
+     *
+     * @param {number}  to       Normalised position [0, 1].
+     * @param {object}  scope    Accumulation target (defaults to this.scope).
+     * @param {boolean} reset    If true, clear active processes and rewind state.
+     * @param {boolean} noEvents Suppress lifecycle callbacks.
+     * @returns {object} The updated scope.
      */
   }, {
     key: "go",
@@ -285,18 +425,26 @@ var TweenAxis = /*#__PURE__*/function () {
     }
 
     /**
-     * apply to scope or this.scope the delta of the process mapped from cPos to 'to'
-     * using the mapped TweenAxis length
-     * @method goTo
-     * @param to
-     * @param scope
-     * @param reset
+     * goTo — move the cursor to absolute position `initial_to` and emit deltas.
+     *
+     * This is the hot path. See the class-level comment for a full explanation
+     * of the algorithm. Below is a step-by-step breakdown of each phase.
+     *
+     * @param {number}  initial_to  Target position (user coordinate, no CENTER).
+     * @param {object}  scope       Accumulation target (defaults to this.scope).
+     * @param {boolean} reset       Flush active-process state (used for rewind/replay).
+     * @param {boolean} noEvents    Suppress entering/moving/leaving callbacks.
+     * @returns {object} The mutated scope.
      */
   }, {
     key: "goTo",
     value: function goTo(initial_to, scope, reset, noEvents) {
       scope = scope || this.scope;
+
+      // Apply CENTER offset to work in internal coordinates
       var to = TweenAxis.center + initial_to;
+
+      // First call initialisation
       if (!this._started) {
         this._started = true;
         this.__cIndex = this.__cPos = 0;
@@ -305,7 +453,9 @@ var TweenAxis = /*#__PURE__*/function () {
         p,
         ln,
         outgoing = this.__outgoing,
+        // scratch: processes leaving
         incoming = this.__incoming,
+        // scratch: processes entering
         pos,
         _from,
         _to,
@@ -313,113 +463,140 @@ var TweenAxis = /*#__PURE__*/function () {
         key,
         maxMarkerIndex = this.__marks.length,
         cPos = TweenAxis.center + this.__cPos,
-        delta = to - cPos;
+        // current pos in internal coords
+        delta = to - cPos; // total movement this frame
+
       if (reset) {
+        // Clear all runtime state — used when replaying from the beginning
         this.__activeProcess.length = 0;
         this.__outgoing.length = 0;
         this.__incoming.length = 0;
       }
 
-      // 1st ajust period, knowing which process are involved / leaving
-      // while my indice target a marker/time period inferior to my pos
+      // ── Phase 1: marker scan ─────────────────────────────────────────────
+      //
+      // Walk `currentMarkerIndex` through `__marks` to find every marker the
+      // cursor crossed this frame.  For each marker, classify the associated
+      // process into outgoing or incoming.
+      //
+      // The condition `delta >= 0 && marks[i] === to` handles the edge case
+      // where a marker sits exactly at the new position: when moving forward
+      // we DO cross it; when moving backward we don't (we're just touching it).
 
+      // ── Forward scan (delta ≥ 0): advance while markers are behind `to` ──
       while (currentMarkerIndex < maxMarkerIndex && to > this.__marks[currentMarkerIndex] || delta >= 0 && this.__marks[currentMarkerIndex] === to) {
-        // if next marker is ending an active process
+        // Case A: this is an END marker (-k) for a currently ACTIVE process.
+        //   → The cursor moved forward past the end of the process.
+        //   → Remove from active, queue as outgoing.
         if ((p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1) {
           this.__activeProcess.splice(p, 1);
           outgoing.push(this.__marksKeys[currentMarkerIndex]);
-          //console.log("close " + this.__marksKeys[i]);
         }
-        // if next marker is process ending a process who just start (direction has
-        // change)
+        // Case B: this is a START marker (+k) for a currently ACTIVE process.
+        //   → Shouldn't normally happen going forward, but can if direction changed:
+        //     the process was activated by a previous backward move, and now the
+        //     cursor is advancing forward past its own start marker again.
+        //   → Treat as leaving (it exits via the start, i.e. progress goes to 0).
         else if ((p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) !== -1) {
           this.__activeProcess.splice(p, 1);
           outgoing.push(this.__marksKeys[currentMarkerIndex]);
-          //console.log("close after dir change" + this.__marksKeys[i]);
         }
-        // if next marker is process ending a process who just start
+        // Case C: this marker's paired marker is already in `incoming`.
+        //   → A process entered AND exited within this single frame (large jump).
+        //   → Remove from incoming and queue as outgoing (it completes instantly).
         else if ((p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1) {
           incoming.splice(p, 1);
           outgoing.push(this.__marksKeys[currentMarkerIndex]);
-          //console.log("close starting " + this.__marksKeys[i]);
-        } else {
-          incoming.push(this.__marksKeys[currentMarkerIndex]);
-          //console.log("right say in " + this.__marksKeys[i]);
         }
-
+        // Case D: none of the above — this is a fresh entry.
+        else {
+          incoming.push(this.__marksKeys[currentMarkerIndex]);
+        }
         currentMarkerIndex++;
       }
 
-      // while my indice-1 target a marker/time period superior to my pos
+      // ── Backward scan (delta < 0): retreat while markers are ahead of `to` ─
       while (currentMarkerIndex - 1 >= 0 && (to < this.__marks[currentMarkerIndex - 1] || delta < 0 && this.__marks[currentMarkerIndex - 1] === to)) {
         currentMarkerIndex--;
+
+        // Same four cases as the forward scan, but in reverse:
+        // we're crossing markers that were previously ahead of us.
+
+        // Case A: END marker for an active process (cursor moved back before the end)
         if ((p = this.__activeProcess.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1) {
           this.__activeProcess.splice(p, 1);
           outgoing.push(this.__marksKeys[currentMarkerIndex]);
-          //console.log("left say out " + this.__marksKeys[i]);
-        } // if next marker is process ending a process who just start (direction has
-        // change)
+        }
+        // Case B: START marker for an active process (cursor moved back past the start)
         else if ((p = this.__activeProcess.indexOf(this.__marksKeys[currentMarkerIndex])) !== -1) {
           this.__activeProcess.splice(p, 1);
           outgoing.push(this.__marksKeys[currentMarkerIndex]);
-          //console.log("close after dir change" + this.__marksKeys[i]);
-        } else if ((p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1) {
+        }
+        // Case C: paired marker already in incoming (entered and exited in one frame)
+        else if ((p = incoming.indexOf(-this.__marksKeys[currentMarkerIndex])) !== -1) {
           incoming.splice(p, 1);
           outgoing.push(this.__marksKeys[currentMarkerIndex]);
-          //console.log("left say out from incoming " + this.__marksKeys[i]);
         } else {
-          //console.log("left say in " + this.__marksKeys[currentMarkerIndex]);
           incoming.push(this.__marksKeys[currentMarkerIndex]);
         }
       }
 
-      // now dispatching deltas
-      //console.log(incoming, outgoing, this.__activeProcess);
+      // ── Phase 2: delta dispatch ──────────────────────────────────────────
+      //
+      // For each of the three groups (outgoing, incoming, active), compute the
+      // normalised position and delta within the process's local coordinate
+      // system, then call the compiled processor.
+      //
+      // Normalisation: internal coordinates → [0, 1] (or [0, localLength]):
+      //   normalisedPos   = localLength * internalPos   / marksLength[key]
+      //   normalisedDelta = localLength * internalDelta / marksLength[key]
 
-      this.__cIndex = currentMarkerIndex;
-      // those leaving subline
+      this.__cIndex = currentMarkerIndex; // save scan position for next frame
+
+      // ── Dispatch: outgoing (processes that just left their range) ─────────
       for (currentMarkerIndex = 0, ln = outgoing.length; currentMarkerIndex < ln; currentMarkerIndex++) {
         p = this._getIndex(outgoing[currentMarkerIndex]);
         key = abs(outgoing[currentMarkerIndex]);
         if (outgoing[currentMarkerIndex] < 0) {
+          // END marker was crossed (process ended naturally going forward,
+          // or re-entered from the end going backward).
+          // Drive the process to its END (normalised 1.0).
           _from = Math.min(this.__marks[p], Math.max(cPos, this.__marks[p] - this.__marksLength[key])) - (this.__marks[p] - this.__marksLength[key]);
-          _to = this.__marksLength[key];
+          _to = this.__marksLength[key]; // full length = normalised 1.0
           pos = _from;
           d = _to - _from;
           pos = (this.localLength || 1) * pos / this.__marksLength[key];
           d = (this.localLength || 1) * d / this.__marksLength[key];
         } else {
+          // START marker was crossed (process ended by reversing past its start).
+          // Drive the process back to its START (normalised 0.0).
           _from = Math.max(this.__marks[p], Math.min(cPos, this.__marks[p] + this.__marksLength[key])) - this.__marks[p];
-          _to = 0;
+          _to = 0; // back to start = normalised 0.0
           pos = _from;
           d = _to - _from;
           pos = (this.localLength || 1) * pos / this.__marksLength[key];
           d = (this.localLength || 1) * d / this.__marksLength[key];
         }
-        //
-        //console.log("out " + this.__marksKeys[p] + " " + this.__marksLength[p]+
-        //            '\npos:'+this.__cPos+
-        //            '\nmark:'+this.__marks[p]+
-        //            '\ninnerpos:'+pos+
-        //            '\ndelta:'+d
-        //);
-
         this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
       }
 
-      // those entering subline
+      // ── Dispatch: incoming (processes that just entered their range) ──────
       for (currentMarkerIndex = 0, ln = incoming.length; currentMarkerIndex < ln; currentMarkerIndex++) {
         p = this._getIndex(incoming[currentMarkerIndex]);
         key = abs(incoming[currentMarkerIndex]);
         if (incoming[currentMarkerIndex] < 0) {
-          _from = this.__marksLength[key];
+          // END marker entered (cursor jumped backward past the end).
+          // Start the process from its END and walk backward.
+          _from = this.__marksLength[key]; // normalised 1.0
           _to = Math.max(this.__marks[p] - this.__marksLength[key], Math.min(cPos + delta, this.__marks[p])) - (this.__marks[p] - this.__marksLength[key]);
           pos = _from;
           d = _to - _from;
           pos = (this.localLength || 1) * pos / this.__marksLength[key];
           d = (this.localLength || 1) * d / this.__marksLength[key];
         } else {
-          _from = 0;
+          // START marker entered (cursor moved forward into the range).
+          // Start the process from 0 and walk forward to where we landed.
+          _from = 0; // normalised 0.0
           _to = Math.max(this.__marks[p], Math.min(cPos + delta, this.__marks[p] + this.__marksLength[key])) - this.__marks[p];
           pos = _from;
           d = _to - _from;
@@ -427,61 +604,96 @@ var TweenAxis = /*#__PURE__*/function () {
           d = (this.localLength || 1) * d / this.__marksLength[key];
         }
 
-        //console.log("in " + this.__marksKeys[p] + " " + this.__marksLength[p]+
-        //            '\ndiff:'+diff+
-        //            '\npos:'+this.__cPos+
-        //            '\nmark:'+this.__marks[p]+
-        //            '\n_from:'+_from+
-        //            '\n_to:'+_to+
-        //            '\ninnerpos:'+pos+
-        //            '\ndelta:'+d
-        //);
-
+        // Skip during reset: incoming processes will be seeded to 0 by the
+        // next normal goTo call, so driving them now would double-apply.
         if (!reset) this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
       }
-      // and those who where already there
-      //if ( !reset )
+
+      // ── Dispatch: active (processes that were already running) ────────────
+      // Simply apply the frame delta, scaled to local coordinates.
       for (currentMarkerIndex = 0, ln = this.__activeProcess.length; currentMarkerIndex < ln; currentMarkerIndex++) {
         p = this._getIndex(this.__activeProcess[currentMarkerIndex]);
         key = abs(this.__activeProcess[currentMarkerIndex]);
 
-        //d = (this.__cPos - diff)<this.__marks[p]?this.__cPos-this.__marks[p] : diff;
+        // Compute current normalised position within the process:
+        //   If the key in activeProcess is negative, the process was entered
+        //   from its END (backward scrub) — compute offset from the start mark.
+        //   If positive, it was entered normally from the START.
         pos = this.__activeProcess[currentMarkerIndex] < 0 ? cPos - (this.__marks[p] - this.__marksLength[key]) : cPos - this.__marks[p];
         pos = (this.localLength || 1) * pos / this.__marksLength[key];
+
+        // Scale the global frame delta to the process's local coordinate system
         d = delta * (this.localLength || 1) / this.__marksLength[key];
-        //console.log("active " + p + " " + this.__marksLength[p]
-        //            +'\nto:'+to
-        //            +'\npos:'+this.__cPos
-        //            +'\nmark:'+this.__marks[p]+
-        //            '\ngdiff:'+diff68786k
-        //            +'\ninnerpos:'+(pos * (this.localLength || 1)) /
-        // abs(this.__marksLength[p]) +'\ndelta:'+(diff * (this.localLength || 1)) /
-        // abs(this.__marksLength[p]) );
         if (!reset) this.__processors[key](pos, d, scope, this.__config[key], this.__config[key].target || this.__config[key].$target && this.__context && this.__context[this.__config[key].$target], noEvents);
       }
+
+      // ── Phase 3: state update ────────────────────────────────────────────
+      // Merge incoming into activeProcess (they are now running).
+      // Clear the scratch arrays for the next frame.
       push.apply(this.__activeProcess, incoming);
       outgoing.length = 0;
       incoming.length = 0;
-      this.__cPos = initial_to;
+      this.__cPos = initial_to; // save cursor position (without CENTER offset)
+
+      // Notify any watchers (used by react-voodoo to drive DOM updates)
       this.onScopeUpdated && this.onScopeUpdated(this.__cPos, delta, scope);
       return scope;
     }
   }]);
-  return TweenAxis;
 }();
-exports["default"] = TweenAxis;
+// ── Static members ────────────────────────────────────────────────────────
+/** Shared animation runner (setTimeout-based, auto starts/stops). */
 _defineProperty(TweenAxis, "Runner", Runner);
+/**
+ * CENTER — coordinate origin offset applied to all stored positions.
+ *
+ * Every `from`/`to` value is stored as `CENTER + userValue` internally.
+ * This ensures that even descriptors with from=0 produce large positive
+ * numbers in the marks array, so the forward/backward scan conditions
+ * (`marks[i] < to`, `marks[i] > cPos`) work without sign edge cases.
+ */
 _defineProperty(TweenAxis, "center", 10000000000);
+/**
+ * LineTypes — registry of line type factories.
+ *
+ * A line type factory has the signature:
+ *   factory(_scope, cfg, target) → processorFn
+ *
+ * The factory is called once at mount time; the returned processorFn is
+ * called on every goTo() call while the cursor is inside the tween range.
+ *
+ * The built-in "Tween" factory uses `new Function(...)` to compile a
+ * minimal, branch-free processor body for each descriptor.
+ *
+ * Custom line types can be added:
+ *   TweenAxis.LineTypes.MyType = function(_scope, cfg, target) { ... }
+ *   TweenAxis.LineTypes.MyType.isFactory = true;
+ */
 _defineProperty(TweenAxis, "LineTypes", {
   Tween: function Tween(_scope, cfg, target) {
+    // ── Build processor function body ──────────────────────────────────
+    // Only add event branches when the descriptor actually provides them,
+    // avoiding dead conditional checks on every animation frame.
     var fn = "\n\t\tif (!noEvents){\n\t\t";
-    if (cfg.entering)
-      // only add code if the functions exists for perfs purpose
-      fn += "\n\t\tif ( lastPos === 0 || lastPos === 1 )\n\t\t\tcfg.entering(update);\n\t\t";
+    // entering: cursor just crossed INTO this tween's range.
+    // lastPos 0 = entered from the start (forward direction).
+    // lastPos 1 = entered from the end (backward direction).
+    if (cfg.entering) fn += "\n\t\tif ( lastPos === 0 || lastPos === 1 )\n\t\t\tcfg.entering(update);\n\t\t";
+    // moving: cursor is inside the range — fires every frame.
     if (cfg.moving) fn += "\n\t\t\tcfg.moving(lastPos + update, lastPos, update);\n\t\t";
+    // leaving: cursor just crossed OUT of this tween's range.
+    // lastPos + update == 0 → left via the start (backward).
+    // lastPos + update == 1 → left via the end (forward).
     if (cfg.leaving) fn += "\n\t\tif ( (lastPos + update === 0 || lastPos + update === 1) )\n\t\t\tcfg.leaving(update);\n\t\t";
     fn += "\n\t}\n\t";
+    // If `target` is provided, narrow scope to scope[target] before writing.
     target && (fn += "scope = scope['" + target + "'];\n");
+
+    // Emit one accumulation line per property in `apply`.
+    // Delta formula:
+    //   linear:  scope.k += update * cfg.apply.k
+    //   eased:   scope.k += (easeFn(newPos) - easeFn(oldPos)) * cfg.apply.k
+    // Both are *deltas* — they accumulate additively, never overwrite.
     if (cfg.apply) for (var k in cfg.apply) if (cfg.apply.hasOwnProperty(k) && isValidKey.test(k)) {
       _scope && (_scope[k] = _scope[k] || 0);
       fn += "scope." + k + "+=(" + (cfg.easeFn ? "cfg.easeFn(lastPos+update)" + "- cfg.easeFn(lastPos)" : "update") + ") * cfg.apply." + k + ";";
@@ -489,4 +701,5 @@ _defineProperty(TweenAxis, "LineTypes", {
     return new Function("lastPos, update, scope, cfg, target, noEvents", fn);
   }
 });
+/** Map of easing function id → easing function. Populate with d3-ease if desired. */
 _defineProperty(TweenAxis, "EasingFunctions", {});

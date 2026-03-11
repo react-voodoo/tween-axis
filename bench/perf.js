@@ -18,8 +18,8 @@
 
 const { performance } = require("perf_hooks");
 
-const TweenAxisJS   = require("../../tween-axis/dist/index.js");
-const TweenAxisWasm = require("../dist/index.js");
+const TweenAxisJS   = require("../dist/TweenAxis.js").default;
+const TweenAxisWasm = require("../dist/TweenAxisWasm.js").default;
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -186,7 +186,54 @@ compare(
 	);
 }
 
-// 6. Direction reversals — worst case for activeProcess indexOf
+// 6. Ten processes all writing to the same property — additive composition
+{
+	const procs = Array.from({ length: 10 }, (_, i) => ({
+		from    : i * 10,
+		duration: 50,
+		apply   : { x: 1 }   // all update the same prop
+	}));
+	compare(
+		"10 processes | same prop (x) | sweep",
+		procs,
+		i => [i % 110]
+	);
+}
+
+// 6b. Same but with rapid direction reversals
+{
+	const procs = Array.from({ length: 10 }, (_, i) => ({
+		from    : i * 10,
+		duration: 50,
+		apply   : { x: 1 }
+	}));
+	compare(
+		"10 processes | same prop (x) | direction reversals",
+		procs,
+		i => {
+			const pos = 40 + (i % 50);
+			return [pos, pos - 15, pos + 8, pos - 4];
+		}
+	);
+}
+
+// 6c. Ten processes, same prop, with easing — worst-case additive cost
+{
+	const ease  = t => t < 0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+	const procs = Array.from({ length: 10 }, (_, i) => ({
+		from    : i * 10,
+		duration: 50,
+		apply   : { x: 1 },
+		easeFn  : ease
+	}));
+	compare(
+		"10 processes | same prop (x) | easeInOutCubic",
+		procs,
+		i => [i % 110]
+	);
+}
+
+// 7. Direction reversals — worst case for activeProcess indexOf
 compare(
 	"5 processes | frequent direction reversals",
 	[

@@ -41,8 +41,8 @@
  *
  * Multi-instance safety
  * ─────────────────────
- * Each TweenAxisWasm instance allocates its own context slot in the WASM pool
- * (max 64 simultaneous instances). destroy() must be called to release the slot.
+ * Each TweenAxisWasm instance allocates its own context slot on the WASM heap.
+ * There is no fixed instance limit. destroy() must be called to release the slot.
  *
  * Synchronous WASM loading
  * ────────────────────────
@@ -164,12 +164,8 @@ export default class TweenAxisWasm {
 		this.__cMaxKey    = 1;
 		this.duration     = 0;
 
-		// Allocate a WASM context slot
+		// Allocate a WASM context slot (always succeeds)
 		this.__ctx = getWasm().createContext();
-		if ( this.__ctx === -1 ) {
-			console.warn("TweenAxisWasm: context pool exhausted (max 64). Falling back to JS goTo.");
-			this.__wasmDisabled = true;
-		}
 
 		cfg = cfg || {};
 		if ( Array.isArray(cfg) ) {
@@ -279,9 +275,7 @@ export default class TweenAxisWasm {
 		this.__config[key]     = cfg;
 
 		// WASM side: register sorted markers (no CENTER offset)
-		if ( !this.__wasmDisabled ) {
-			getWasm().addProcess(this.__ctx, _from, _to, ln, key);
-		}
+		getWasm().addProcess(this.__ctx, _from, _to, ln, key);
 
 		return this;
 	}
@@ -311,11 +305,6 @@ export default class TweenAxisWasm {
 	goTo( initial_to, scope, reset, noEvents ) {
 		scope = scope || this.scope;
 
-		if ( this.__wasmDisabled ) {
-			// Fallback: pure JS state machine (only reached if context pool was full)
-			return this._goToJS(initial_to, scope, reset, noEvents);
-		}
-
 		const wasm        = getWasm();
 		const ctx         = this.__ctx;
 		const resultCount = wasm.goTo(ctx, initial_to, reset ? 1 : 0);
@@ -340,169 +329,4 @@ export default class TweenAxisWasm {
 		return scope;
 	}
 
-	// ── Pure-JS fallback (used only when WASM context pool is exhausted) ──────
-
-	_goToJS( initial_to, scope, reset, noEvents ) {
-		// Minimal JS fallback — delegates to the same logic as the original
-		// tween-axis package so correctness is guaranteed even in edge cases.
-		// This is intentionally simple; the WASM path covers the performance case.
-		if ( !this._jsState ) this._initJSState();
-		const js = this._jsState;
-
-		if ( !js.started ) {
-			js.started = true;
-			js.cIndex  = 0;
-			js.cPos    = 0;
-		}
-
-		const to    = initial_to;
-		const cPos  = js.cPos;
-		const delta = to - cPos;
-
-		if ( reset ) {
-			js.activeProcess.length = 0;
-			js.outgoing.length      = 0;
-			js.incoming.length      = 0;
-		}
-
-		let ci           = js.cIndex;
-		const marks      = js.marks;
-		const marksKeys  = js.marksKeys;
-		const marksLen   = js.marksLength;
-		const active     = js.activeProcess;
-		const outgoing   = js.outgoing;
-		const incoming   = js.incoming;
-		const maxCI      = marks.length;
-		const ll         = this.localLength || 1;
-
-		// Forward scan
-		while (
-			(ci < maxCI && to > marks[ci]) ||
-			(delta >= 0 && ci < maxCI && marks[ci] === to)
-		) {
-			const mk = marksKeys[ci];
-			let p;
-			if ( (p = active.indexOf(-mk)) !== -1 ) {
-				active.splice(p, 1);
-				outgoing.push(mk);
-			}
-			else if ( (p = active.indexOf(mk)) !== -1 ) {
-				active.splice(p, 1);
-				outgoing.push(mk);
-			}
-			else if ( (p = incoming.indexOf(-mk)) !== -1 ) {
-				incoming.splice(p, 1);
-				outgoing.push(mk);
-			}
-			else incoming.push(mk);
-			ci++;
-		}
-		// Backward scan
-		while (
-			ci - 1 >= 0 &&
-			(to < marks[ci - 1] || (delta < 0 && marks[ci - 1] === to))
-		) {
-			ci--;
-			const mk = marksKeys[ci];
-			let p;
-			if ( (p = active.indexOf(-mk)) !== -1 ) {
-				active.splice(p, 1);
-				outgoing.push(mk);
-			}
-			else if ( (p = active.indexOf(mk)) !== -1 ) {
-				active.splice(p, 1);
-				outgoing.push(mk);
-			}
-			else if ( (p = incoming.indexOf(-mk)) !== -1 ) {
-				incoming.splice(p, 1);
-				outgoing.push(mk);
-			}
-			else incoming.push(mk);
-		}
-
-		js.cIndex = ci;
-
-		const dispatch = ( key, pos, d ) => {
-			const cfg    = this.__config[key];
-			const target = cfg && (cfg.target || (cfg.$target && this.__context && this.__context[cfg.$target]));
-			this.__processors[key](pos, d, scope, cfg, target, noEvents);
-		};
-
-		// Outgoing
-		for ( let i = 0, ln = outgoing.length; i < ln; i++ ) {
-			const outKey = outgoing[i];
-			const absKey = Math.abs(outKey);
-			const pi     = marksKeys.indexOf(outKey);
-			const ml     = marksLen[absKey];
-			let pos, d;
-			if ( outKey < 0 ) {
-				const fp = Math.min(marks[pi], Math.max(cPos, marks[pi] - ml)) - (marks[pi] - ml);
-				pos      = fp;
-				d        = ml - fp;
-			}
-			else {
-				const fp = Math.max(marks[pi], Math.min(cPos, marks[pi] + ml)) - marks[pi];
-				pos      = fp;
-				d        = -fp;
-			}
-			dispatch(absKey, ll * pos / ml, ll * d / ml);
-		}
-		// Incoming
-		for ( let i = 0, ln = incoming.length; i < ln; i++ ) {
-			const inKey  = incoming[i];
-			const absKey = Math.abs(inKey);
-			const pi     = marksKeys.indexOf(inKey);
-			const ml     = marksLen[absKey];
-			let pos, d;
-			if ( inKey < 0 ) {
-				const tp = Math.max(marks[pi] - ml, Math.min(cPos + delta, marks[pi])) - (marks[pi] - ml);
-				pos      = ml;
-				d        = tp - ml;
-			}
-			else {
-				const tp = Math.max(marks[pi], Math.min(cPos + delta, marks[pi] + ml)) - marks[pi];
-				pos      = 0;
-				d        = tp;
-			}
-			if ( !reset ) dispatch(absKey, ll * pos / ml, ll * d / ml);
-		}
-		// Active
-		for ( let i = 0, ln = active.length; i < ln; i++ ) {
-			const actKey = active[i];
-			const absKey = Math.abs(actKey);
-			const pi     = marksKeys.indexOf(actKey);
-			const ml     = marksLen[absKey];
-			const pos    = ll * (actKey < 0 ? cPos - (marks[pi] - ml) : cPos - marks[pi]) / ml;
-			const d      = delta * ll / ml;
-			if ( !reset ) dispatch(absKey, pos, d);
-		}
-
-		active.push(...incoming);
-		outgoing.length = 0;
-		incoming.length = 0;
-		js.cPos         = initial_to;
-
-		this.__cPos = initial_to;
-		this.onScopeUpdated && this.onScopeUpdated(this.__cPos, delta, scope);
-		return scope;
-	}
-
-	_initJSState() {
-		this._jsState = {
-			marks        : [],
-			marksKeys    : [],
-			marksLength  : [],
-			activeProcess: [],
-			outgoing     : [],
-			incoming     : [],
-			cPos         : 0,
-			cIndex       : 0,
-			started      : false
-		};
-		// Replay addProcess calls into JS state
-		// (by this point __config contains everything we need)
-		// Actually we can't replay because we don't have from/to stored separately.
-		// The JS fallback won't be needed in practice (pool of 64 is more than enough).
-		console.warn("TweenAxisWasm: JS fallback state is empty — results may be incorrect.");
-	}
 }

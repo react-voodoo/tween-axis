@@ -1,7 +1,7 @@
 "use strict";
 
 var _TweenAxisWasm = _interopRequireDefault(require("./TweenAxisWasm"));
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 /*
  *   The MIT License (MIT)
  *   Copyright (c) 2023. Nathanael Braun

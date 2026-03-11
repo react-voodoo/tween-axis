@@ -4,21 +4,15 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports["default"] = void 0;
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { _defineProperty(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
-function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 /*
  *   The MIT License (MIT)
  *   Copyright (c) 2023. Nathanael Braun
@@ -62,8 +56,8 @@ function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input ==
  *
  * Multi-instance safety
  * ─────────────────────
- * Each TweenAxisWasm instance allocates its own context slot in the WASM pool
- * (max 64 simultaneous instances). destroy() must be called to release the slot.
+ * Each TweenAxisWasm instance allocates its own context slot on the WASM heap.
+ * There is no fixed instance limit. destroy() must be called to release the slot.
  *
  * Synchronous WASM loading
  * ────────────────────────
@@ -161,7 +155,7 @@ var Runner = {
 };
 
 // ─── TweenAxisWasm ────────────────────────────────────────────────────────────
-var TweenAxisWasm = /*#__PURE__*/function () {
+var TweenAxisWasm = exports["default"] = /*#__PURE__*/function () {
   function TweenAxisWasm(cfg, scope) {
     _classCallCheck(this, TweenAxisWasm);
     this.scope = scope;
@@ -171,12 +165,8 @@ var TweenAxisWasm = /*#__PURE__*/function () {
     this.__cMaxKey = 1;
     this.duration = 0;
 
-    // Allocate a WASM context slot
+    // Allocate a WASM context slot (always succeeds)
     this.__ctx = getWasm().createContext();
-    if (this.__ctx === -1) {
-      console.warn("TweenAxisWasm: context pool exhausted (max 64). Falling back to JS goTo.");
-      this.__wasmDisabled = true;
-    }
     cfg = cfg || {};
     if (Array.isArray(cfg)) {
       this.localLength = 1;
@@ -187,7 +177,7 @@ var TweenAxisWasm = /*#__PURE__*/function () {
   }
 
   /** Release the WASM context slot. Call when discarding this instance. */
-  _createClass(TweenAxisWasm, [{
+  return _createClass(TweenAxisWasm, [{
     key: "destroy",
     value: function destroy() {
       if (this.__ctx !== undefined && this.__ctx !== -1) {
@@ -297,9 +287,7 @@ var TweenAxisWasm = /*#__PURE__*/function () {
       this.__config[key] = cfg;
 
       // WASM side: register sorted markers (no CENTER offset)
-      if (!this.__wasmDisabled) {
-        getWasm().addProcess(this.__ctx, _from, _to, ln, key);
-      }
+      getWasm().addProcess(this.__ctx, _from, _to, ln, key);
       return this;
     }
   }, {
@@ -332,10 +320,6 @@ var TweenAxisWasm = /*#__PURE__*/function () {
     key: "goTo",
     value: function goTo(initial_to, scope, reset, noEvents) {
       scope = scope || this.scope;
-      if (this.__wasmDisabled) {
-        // Fallback: pure JS state machine (only reached if context pool was full)
-        return this._goToJS(initial_to, scope, reset, noEvents);
-      }
       var wasm = getWasm();
       var ctx = this.__ctx;
       var resultCount = wasm.goTo(ctx, initial_to, reset ? 1 : 0);
@@ -356,159 +340,8 @@ var TweenAxisWasm = /*#__PURE__*/function () {
       this.onScopeUpdated && this.onScopeUpdated(this.__cPos, initial_to - this.__cPos, scope);
       return scope;
     }
-
-    // ── Pure-JS fallback (used only when WASM context pool is exhausted) ──────
-  }, {
-    key: "_goToJS",
-    value: function _goToJS(initial_to, scope, reset, noEvents) {
-      var _this2 = this;
-      // Minimal JS fallback — delegates to the same logic as the original
-      // tween-axis package so correctness is guaranteed even in edge cases.
-      // This is intentionally simple; the WASM path covers the performance case.
-      if (!this._jsState) this._initJSState();
-      var js = this._jsState;
-      if (!js.started) {
-        js.started = true;
-        js.cIndex = 0;
-        js.cPos = 0;
-      }
-      var to = initial_to;
-      var cPos = js.cPos;
-      var delta = to - cPos;
-      if (reset) {
-        js.activeProcess.length = 0;
-        js.outgoing.length = 0;
-        js.incoming.length = 0;
-      }
-      var ci = js.cIndex;
-      var marks = js.marks;
-      var marksKeys = js.marksKeys;
-      var marksLen = js.marksLength;
-      var active = js.activeProcess;
-      var outgoing = js.outgoing;
-      var incoming = js.incoming;
-      var maxCI = marks.length;
-      var ll = this.localLength || 1;
-
-      // Forward scan
-      while (ci < maxCI && to > marks[ci] || delta >= 0 && ci < maxCI && marks[ci] === to) {
-        var mk = marksKeys[ci];
-        var p = void 0;
-        if ((p = active.indexOf(-mk)) !== -1) {
-          active.splice(p, 1);
-          outgoing.push(mk);
-        } else if ((p = active.indexOf(mk)) !== -1) {
-          active.splice(p, 1);
-          outgoing.push(mk);
-        } else if ((p = incoming.indexOf(-mk)) !== -1) {
-          incoming.splice(p, 1);
-          outgoing.push(mk);
-        } else incoming.push(mk);
-        ci++;
-      }
-      // Backward scan
-      while (ci - 1 >= 0 && (to < marks[ci - 1] || delta < 0 && marks[ci - 1] === to)) {
-        ci--;
-        var _mk = marksKeys[ci];
-        var _p = void 0;
-        if ((_p = active.indexOf(-_mk)) !== -1) {
-          active.splice(_p, 1);
-          outgoing.push(_mk);
-        } else if ((_p = active.indexOf(_mk)) !== -1) {
-          active.splice(_p, 1);
-          outgoing.push(_mk);
-        } else if ((_p = incoming.indexOf(-_mk)) !== -1) {
-          incoming.splice(_p, 1);
-          outgoing.push(_mk);
-        } else incoming.push(_mk);
-      }
-      js.cIndex = ci;
-      var dispatch = function dispatch(key, pos, d) {
-        var cfg = _this2.__config[key];
-        var target = cfg && (cfg.target || cfg.$target && _this2.__context && _this2.__context[cfg.$target]);
-        _this2.__processors[key](pos, d, scope, cfg, target, noEvents);
-      };
-
-      // Outgoing
-      for (var i = 0, ln = outgoing.length; i < ln; i++) {
-        var outKey = outgoing[i];
-        var absKey = Math.abs(outKey);
-        var pi = marksKeys.indexOf(outKey);
-        var ml = marksLen[absKey];
-        var pos = void 0,
-          d = void 0;
-        if (outKey < 0) {
-          var fp = Math.min(marks[pi], Math.max(cPos, marks[pi] - ml)) - (marks[pi] - ml);
-          pos = fp;
-          d = ml - fp;
-        } else {
-          var _fp = Math.max(marks[pi], Math.min(cPos, marks[pi] + ml)) - marks[pi];
-          pos = _fp;
-          d = -_fp;
-        }
-        dispatch(absKey, ll * pos / ml, ll * d / ml);
-      }
-      // Incoming
-      for (var _i = 0, _ln = incoming.length; _i < _ln; _i++) {
-        var inKey = incoming[_i];
-        var _absKey = Math.abs(inKey);
-        var _pi = marksKeys.indexOf(inKey);
-        var _ml = marksLen[_absKey];
-        var _pos = void 0,
-          _d = void 0;
-        if (inKey < 0) {
-          var tp = Math.max(marks[_pi] - _ml, Math.min(cPos + delta, marks[_pi])) - (marks[_pi] - _ml);
-          _pos = _ml;
-          _d = tp - _ml;
-        } else {
-          var _tp = Math.max(marks[_pi], Math.min(cPos + delta, marks[_pi] + _ml)) - marks[_pi];
-          _pos = 0;
-          _d = _tp;
-        }
-        if (!reset) dispatch(_absKey, ll * _pos / _ml, ll * _d / _ml);
-      }
-      // Active
-      for (var _i2 = 0, _ln2 = active.length; _i2 < _ln2; _i2++) {
-        var actKey = active[_i2];
-        var _absKey2 = Math.abs(actKey);
-        var _pi2 = marksKeys.indexOf(actKey);
-        var _ml2 = marksLen[_absKey2];
-        var _pos2 = ll * (actKey < 0 ? cPos - (marks[_pi2] - _ml2) : cPos - marks[_pi2]) / _ml2;
-        var _d2 = delta * ll / _ml2;
-        if (!reset) dispatch(_absKey2, _pos2, _d2);
-      }
-      active.push.apply(active, _toConsumableArray(incoming));
-      outgoing.length = 0;
-      incoming.length = 0;
-      js.cPos = initial_to;
-      this.__cPos = initial_to;
-      this.onScopeUpdated && this.onScopeUpdated(this.__cPos, delta, scope);
-      return scope;
-    }
-  }, {
-    key: "_initJSState",
-    value: function _initJSState() {
-      this._jsState = {
-        marks: [],
-        marksKeys: [],
-        marksLength: [],
-        activeProcess: [],
-        outgoing: [],
-        incoming: [],
-        cPos: 0,
-        cIndex: 0,
-        started: false
-      };
-      // Replay addProcess calls into JS state
-      // (by this point __config contains everything we need)
-      // Actually we can't replay because we don't have from/to stored separately.
-      // The JS fallback won't be needed in practice (pool of 64 is more than enough).
-      console.warn("TweenAxisWasm: JS fallback state is empty — results may be incorrect.");
-    }
   }]);
-  return TweenAxisWasm;
 }();
-exports["default"] = TweenAxisWasm;
 _defineProperty(TweenAxisWasm, "Runner", Runner);
 _defineProperty(TweenAxisWasm, "EasingFunctions", {});
 _defineProperty(TweenAxisWasm, "LineTypes", {
