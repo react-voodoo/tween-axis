@@ -38,11 +38,28 @@
  *   objects, and the Runner (animation loop).
  * • goTo() asks the WASM for a result list [(phase, key, pos, delta), ...] and
  *   then dispatches each entry to the appropriate JS processor function.
+ * • Optionally, processes can be registered with addWasmApply() to accumulate
+ *   entirely inside WASM (PROC_WASM mode) — zero JS boundary crossings for those
+ *   properties during the hot loop.  Read results with getScopeValues() after goTo().
+ * • Contexts can be chained: a process in a parent axis dispatches to a child axis
+ *   (PROC_CHILD mode), driving the entire subtree from one top-level goTo() call.
  *
  * Multi-instance safety
  * ─────────────────────
  * Each TweenAxisWasm instance allocates its own context slot on the WASM heap.
  * There is no fixed instance limit. destroy() must be called to release the slot.
+ *
+ * Process modes
+ * ─────────────
+ * PROC_RESULT (0, default) — JS processor function is called each frame (existing path).
+ * PROC_WASM   (1)          — WASM accumulates into its scope buffer; read via getScopeValues().
+ * PROC_CHILD  (2)          — Dispatches to a child TweenAxisWasm; child must use PROC_WASM.
+ *
+ * Built-in easing IDs (for PROC_WASM)
+ * ─────────────────────────────────────
+ * 0 linear  1 easeInQuad  2 easeOutQuad  3 easeInOutQuad
+ * 4 easeInCubic  5 easeOutCubic  6 easeInOutCubic
+ * 7 easeInExpo   8 easeOutExpo   9 easeInOutExpo
  *
  * Synchronous WASM loading
  * ────────────────────────
@@ -155,6 +172,35 @@ export default class TweenAxisWasm {
 	static Runner          = Runner;
 	static EasingFunctions = {};
 	static LineTypes       = { Tween: tweenFactory };
+
+	// Process mode constants (mirror WASM exports)
+	static PROC_RESULT = 0;
+	static PROC_WASM   = 1;
+	static PROC_CHILD  = 2;
+
+	// Built-in easing IDs (mirror WASM exports)
+	static EASE_LINEAR      = 0;
+	static EASE_IN_QUAD     = 1;
+	static EASE_OUT_QUAD    = 2;
+	static EASE_INOUT_QUAD  = 3;
+	static EASE_IN_CUBIC    = 4;
+	static EASE_OUT_CUBIC   = 5;
+	static EASE_INOUT_CUBIC = 6;
+	static EASE_IN_EXPO     = 7;
+	static EASE_OUT_EXPO    = 8;
+	static EASE_INOUT_EXPO  = 9;
+
+	/** Allocate a shared scope buffer usable by multiple instances. Returns scopeId. */
+	static createScope() { return getWasm().createScope(); }
+
+	/** Release a shared scope buffer. */
+	static destroyScope( scopeId ) { getWasm().destroyScope(scopeId); }
+
+	/** Zero all values in a shared scope (call before each goTo() frame). */
+	static clearSharedScope( scopeId ) { getWasm().clearSharedScope(scopeId); }
+
+	/** Read a value from a shared scope by slot index. */
+	static getSharedScopeValue( scopeId, slot ) { return getWasm().getSharedScopeValue(scopeId, slot); }
 
 	constructor( cfg, scope ) {
 		this.scope        = scope;
@@ -278,6 +324,101 @@ export default class TweenAxisWasm {
 		getWasm().addProcess(this.__ctx, _from, _to, ln, key);
 
 		return this;
+	}
+
+	// ── WASM-side accumulation ────────────────────────────────────────────────
+
+	/**
+	 * Register a WASM-side accumulation descriptor for process `key`.
+	 * After this call the process runs in PROC_WASM mode — goTo() accumulates
+	 * directly into the WASM scope buffer with zero JS boundary crossings.
+	 *
+	 * @param {number} key      Process key (from addProcess / internal __cMaxKey)
+	 * @param {number} slot     Property slot index in the scope buffer [0, 511]
+	 * @param {number} value    Multiplier (equivalent to cfg.apply[propName])
+	 * @param {number} easingId Built-in easing (0=linear … 9=easeInOutExpo)
+	 */
+	addWasmApply( key, slot, value, easingId = 0 ) {
+		getWasm().addApply(this.__ctx, key, slot, value, easingId);
+	}
+
+	/**
+	 * Register all properties from a cfg.apply map as WASM-side descriptors.
+	 * `slotMap` maps property names to their scope buffer slot index.
+	 *
+	 * Example:
+	 *   const slotMap = { x: 0, y: 1, opacity: 2 };
+	 *   axis.addProcess(0, 100, factory, cfg);
+	 *   const key = axis.__cMaxKey - 1;
+	 *   axis.addWasmApplyMap(key, cfg.apply, slotMap);
+	 */
+	addWasmApplyMap( key, applyMap, slotMap, easingId = 0 ) {
+		const wasm = getWasm();
+		for ( const prop in applyMap ) {
+			if ( applyMap.hasOwnProperty(prop) && slotMap.hasOwnProperty(prop) ) {
+				wasm.addApply(this.__ctx, key, slotMap[prop], applyMap[prop], easingId);
+			}
+		}
+	}
+
+	/**
+	 * Read accumulated WASM scope values after goTo().
+	 * `slots` is an object mapping property names → slot indices.
+	 * Returns a plain object with the same keys and their accumulated values.
+	 *
+	 * Example:
+	 *   const vals = axis.getScopeValues({ x: 0, y: 1, opacity: 2 });
+	 *   // vals = { x: 0.42, y: -0.1, opacity: 0.87 }
+	 */
+	getScopeValues( slots ) {
+		const wasm = getWasm();
+		const ctx  = this.__ctx;
+		const out  = {};
+		for ( const name in slots ) {
+			if ( slots.hasOwnProperty(name) )
+				out[name] = wasm.getScopeValue(ctx, slots[name]);
+		}
+		return out;
+	}
+
+	/** Read a single WASM scope slot. */
+	getScopeValue( slot ) {
+		return getWasm().getScopeValue(this.__ctx, slot);
+	}
+
+	/** Zero the WASM scope buffer. Call before each goTo() when using PROC_WASM. */
+	clearScope() {
+		getWasm().clearScope(this.__ctx);
+	}
+
+	// ── Context chaining ──────────────────────────────────────────────────────
+
+	/**
+	 * Make process `key` in this axis drive `childAxis` in PROC_CHILD mode.
+	 * When the process is active, goTo() advances the child with the normalised
+	 * process position — no JS involvement.  The child must use addWasmApply()
+	 * for all its processes (PROC_RESULT processes in children are silently dropped).
+	 */
+	setProcessChild( key, childAxis ) {
+		getWasm().setProcessChild(this.__ctx, key, childAxis.__ctx);
+	}
+
+	// ── Shared scope pool ─────────────────────────────────────────────────────
+
+	/**
+	 * Attach this context to an externally-created shared scope.
+	 * Multiple TweenAxisWasm instances can share one scope so their PROC_WASM
+	 * processes accumulate additively into the same buffer.
+	 */
+	attachScope( scopeId ) {
+		getWasm().setContextScope(this.__ctx, scopeId);
+		this.__scopeId = scopeId;
+	}
+
+	/** Detach from shared scope (reverts to internal buffer). */
+	detachScope() {
+		getWasm().detachContextScope(this.__ctx);
+		this.__scopeId = null;
 	}
 
 	_getIndex( key ) {

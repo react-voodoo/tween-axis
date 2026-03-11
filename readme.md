@@ -1,5 +1,5 @@
 <h1 align="center">tween-axis</h1>
-<p align="center">Fast, additive, reversible, delta-based tween composition engine</p>
+<p align="center">Fast, additive, delta-based tween composition engine with WebAssembly acceleration.</p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/tween-axis">
@@ -11,7 +11,7 @@
 
 ---
 
-## What is it?
+## What's tween-axis?
 
 Classic tween engines output absolute values. When multiple animations target the same property simultaneously — for example, blending a scroll animation with a drag interaction — resolving those values requires complex bookkeeping.
 
@@ -23,6 +23,15 @@ This enables:
 - **Bidirectional scrubbing** — moving the cursor forward or backward both produce correct, reversible deltas
 - **Full timeline control** — drive animations from scroll position, drag gestures, timers, or any other input
 - **No runtime dependencies** — pure JavaScript, zero external requirements
+
+
+
+The package ships two implementations with identical public APIs:
+
+| Import | Description |
+|--------|-------------|
+| `tween-axis` / `tween-axis/dist/index.js` | Pure JavaScript implementation |
+| `tween-axis/dist/TweenAxisWasm` | WebAssembly-accelerated implementation (drop-in replacement) |
 
 ---
 
@@ -37,255 +46,252 @@ npm install tween-axis
 ## Quick start
 
 ```js
-import TweenAxis from "tween-axis";
+import TweenAxis from "tween-axis/dist/TweenAxisWasm";
+import * as ease from "d3-ease";
 
-// Optional: plug in d3-ease or any compatible easing library
-// import * as D3Ease from "d3-ease";
-// TweenAxis.EasingFunctions = D3Ease;
+TweenAxis.EasingFunctions = ease;
+
+const scope = { opacity: 0, x: 0 };
 
 const axis = new TweenAxis([
   {
-    target  : "box",
-    from    : 0,
-    duration: 100,
-    // easeFn: "easePolyOut",  // any key from TweenAxis.EasingFunctions
-    apply   : { x: 200, opacity: 1 }
+    from: 0, duration: 100,
+    apply: { opacity: 1 },
+    easeFn: "easeQuadInOut",
   },
   {
-    target  : "box",
-    from    : 0,
-    duration: 100,
-    // easeFn: "easePolyIn",
-    apply   : { x: -100 }    // additive: net x delta at full progress = 100
-  }
+    from: 0, duration: 100,
+    apply: { x: 200 },
+  },
 ]);
 
-const context = { box: { x: 0, opacity: 0 } };
-
-// Absolute position (0 → axis.duration)
-axis.goTo(50, context);   // { box: { x: 50, opacity: 0.5 } }  (approx, before easing)
-axis.goTo(25, context);   // { box: { x: 25, opacity: 0.25 } }
-axis.goTo(75, context);   // { box: { x: 75, opacity: 0.75 } }
-
-// Normalized position (0 → 1)
-axis.go(0.5, context);    // equivalent to goTo(50)
+axis.goTo(50, scope);   // scope.opacity ≈ 0.5, scope.x ≈ 100
+axis.goTo(100, scope);  // scope.opacity = 1,   scope.x = 200
 ```
 
 ---
 
-## Core concept
+## Tween descriptor
 
-A `TweenAxis` instance holds a sorted list of **markers** on a virtual number line. Each tween descriptor occupies a range `[from, from + duration]` on that line. Calling `goTo(pos)` moves the internal cursor and emits per-descriptor **deltas** into a scope object. The delta for each descriptor is the interpolated change from the previous cursor position to the new one — not an absolute value.
+Each entry in the configuration array is a **tween descriptor**:
 
-Deltas are accumulated with `+=`, so multiple descriptors targeting the same scope key compose additively with no extra coordination.
+```js
+{
+  from:     0,           // Start position on the timeline (omit for sequential)
+  duration: 100,         // Length of this segment
+  apply:    { opacity: 1, x: 200 },  // Properties and their total contribution
+  easeFn:   "easeQuadInOut",          // Easing: string key in EasingFunctions, or fn
+  target:   "nodeId",    // Optional sub-key inside the scope object
+  entering: (delta) => {},            // Called when the process becomes active
+  moving:   (pos, prev, delta) => {}, // Called every frame while active
+  leaving:  (delta) => {},            // Called when the process becomes inactive
+}
+```
+
+**`apply` values are multipliers**, not absolute targets. The total contribution of a process over its full duration equals `apply[key] * 1.0`. Easing changes the distribution of that contribution across the timeline but not the total.
 
 ---
 
 ## API
 
-### Constructor
+### `new TweenAxis(descriptors, scope?)`
+
+Creates and mounts a timeline from an array of tween descriptors.
+
+### `axis.goTo(position, scope?, reset?, noEvents?)`
+
+Advance the timeline to `position`. Processors receive the delta from the previous position and accumulate it into `scope`.
+
+- `reset = true` — jump without firing `entering`/`moving` callbacks (used for initialisation).
+- `noEvents = true` — suppress all callbacks.
+
+Returns `scope`.
+
+### `axis.go(normalizedPos, scope?, reset?, noEvents?)`
+
+Equivalent to `goTo(normalizedPos * axis.duration, ...)`.
+
+### `axis.run(scope, cb, durationMs?)`
+
+Animate from 0 → `axis.duration` over `durationMs` milliseconds.
+
+### `axis.runTo(to, durationMs, easingFn?, tick?, cb?)`
+
+Animate from the current position to `to` over `durationMs` milliseconds.
+
+### `axis.mount(descriptors, scope?)`
+
+Load additional tween descriptors into an existing instance (appends to the timeline).
+
+### `axis.addProcess(from, to, factory, cfg)`
+
+Low-level: register a single process with explicit start/end positions and a factory function.
+
+### `axis.destroy()`
+
+Release the WASM context slot (TweenAxisWasm only). Call when discarding the instance.
+
+### Static: `TweenAxis.EasingFunctions`
+
+A map of easing function names to functions. Assign `d3-ease` exports here to make named easing available in descriptors.
 
 ```js
-new TweenAxis(descriptors, scope?)
+import * as ease from "d3-ease";
+TweenAxis.EasingFunctions = ease;
 ```
 
-| Argument | Type | Description |
-|---|---|---|
-| `descriptors` | `Array` or `{ TweenAxis: Array }` | Array of tween descriptor objects |
-| `scope` | `Object` (optional) | Default target object for delta accumulation |
+### Static: `TweenAxis.Runner`
+
+Shared `setTimeout`-based animation loop used by `run()` and `runTo()`.
+
+### Static: `TweenAxis.LineTypes`
+
+Registry of line-type factories. The default factory is `"Tween"`. Custom types can be registered here.
 
 ---
 
-### Tween descriptor
+## WebAssembly backend — `TweenAxisWasm`
+
+`TweenAxisWasm` is a drop-in replacement that offloads the timeline state machine to WebAssembly. The WASM binary is embedded as base64 at build time — no fetch or filesystem access required at runtime.
+
+### Process modes
+
+Each registered process can run in one of three modes:
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `PROC_RESULT` | 0 | Default. WASM emits `(phase, key, pos, delta)` entries; JS processors handle accumulation. |
+| `PROC_WASM` | 1 | WASM accumulates directly into an internal scope buffer. Zero JS boundary crossings per frame. Read results with `getScopeValue()` after `goTo()`. |
+| `PROC_CHILD` | 2 | Drives a child `TweenAxisWasm` from the normalised process position. The entire child subtree executes inside the parent's `goTo()`. |
+
+### PROC_WASM mode
+
+Use `addWasmApply()` after `addProcess()` to switch a process to PROC_WASM mode. The WASM engine then accumulates the eased delta × multiplier into a flat scope buffer every frame — no JS function call per property.
 
 ```js
-{
-  target  : "myObjectKey",   // key in the scope object to write deltas to
-  from    : 0,               // start position on the axis
-  duration: 100,             // length on the axis
-  easeFn  : "easePolyOut",   // string key into TweenAxis.EasingFunctions, or a (t) => t function
-  apply   : {                // delta values to apply at full progress
-    value: 200,
-    x: 50,
-  },
-  // lifecycle callbacks (all optional)
-  entering: (delta) => {},                         // fired once when cursor enters the range
-  moving  : (newPos, prevPos, delta) => {},        // fired every update while inside the range
-  leaving : (delta) => {},                         // fired once when cursor leaves the range
-}
+axis.addProcess(0, 100, factory, cfg);
+const key = axis.__cMaxKey - 1;
+
+// Register each property with a slot index and built-in easing
+axis.addWasmApply(key, 0 /* slot */, 1.0 /* multiplier */, TweenAxis.EASE_INOUT_CUBIC);
+
+// Before each goTo() frame, zero the buffer:
+axis.clearScope();
+axis.goTo(newPos);
+
+// Then read accumulated values:
+const value = axis.getScopeValue(0 /* slot */);
 ```
 
-**Sequencing rules:**
+### `addWasmApply(key, slot, value, easingId)`
 
-- Descriptors without `from` are placed automatically — each starts where the previous one ended.
-- Descriptors with an explicit `from` are placed in parallel at that position.
+Register a WASM-side accumulation descriptor for process `key`.
 
----
+- `key` — process key returned from `addProcess` (`__cMaxKey - 1` after the call).
+- `slot` — property slot index in the scope buffer `[0, 511]`.
+- `value` — multiplier (equivalent to `cfg.apply[propName]`).
+- `easingId` — built-in easing constant (see table below).
 
-### Moving the cursor
+### `addWasmApplyMap(key, applyMap, slotMap, easingId?)`
+
+Register all properties from an `apply`-style map at once.
 
 ```js
-// Absolute position (0 → axis.duration)
-axis.goTo(position, scope?)   // returns scope with accumulated deltas
-
-// Normalized position (0 → 1)
-axis.go(normalizedPos, scope?) // equivalent to goTo(normalizedPos * duration)
+const slotMap = { x: 0, y: 1, opacity: 2 };
+axis.addWasmApplyMap(key, cfg.apply, slotMap, TweenAxis.EASE_LINEAR);
 ```
 
-Both methods return the scope object. If no scope is passed, the instance default scope is used.
+### `getScopeValue(slot)`
 
----
+Read a single accumulated value from the WASM scope buffer after `goTo()`.
 
-### Animation helpers
+### `getScopeValues(slots)`
+
+Read multiple slots at once. `slots` is an object mapping names to slot indices; returns a plain object with the same keys and their accumulated values.
 
 ```js
-// Play from 0 to duration over `tm` milliseconds
-axis.run(scope, callback, tm?)
-
-// Animate cursor from its current position to `to` over `tm` milliseconds
-axis.runTo(to, tm, easingFn?, tickFn?, callback?)
+const vals = axis.getScopeValues({ x: 0, y: 1, opacity: 2 });
+// vals = { x: 0.42, y: -0.1, opacity: 0.87 }
 ```
 
----
+### `clearScope()`
 
-### Static members
+Zero the WASM scope buffer. Must be called before each `goTo()` frame when using PROC_WASM.
 
-| Member | Description |
-|---|---|
-| `TweenAxis.EasingFunctions` | Map of easing id → function. Assign `d3-ease` exports here. |
-| `TweenAxis.LineTypes` | Map of line type id → factory function. `"Tween"` is the built-in default. |
-| `TweenAxis.Runner` | Internal `setTimeout`-based animation runner. |
-| `TweenAxis.center` | Large number (`1e10`) used as coordinate origin offset. |
+### `resetWasm()`
 
----
+Reset the WASM context without releasing its slot. Used by the object-pool pattern to reuse an instance without a `destroy` + `createContext` round-trip.
 
-## Extending line types
+### Built-in easing IDs
 
-Custom line types allow you to attach any behavior — side-effects, SVG path animation, etc. — to an axis descriptor.
+| Constant | ID | d3-ease equivalent |
+|----------|----|--------------------|
+| `EASE_LINEAR` | 0 | `easeLinear` |
+| `EASE_IN_QUAD` | 1 | `easeQuadIn` |
+| `EASE_OUT_QUAD` | 2 | `easeQuadOut` |
+| `EASE_INOUT_QUAD` | 3 | `easeQuadInOut` |
+| `EASE_IN_CUBIC` | 4 | `easeCubicIn` |
+| `EASE_OUT_CUBIC` | 5 | `easeCubicOut` |
+| `EASE_INOUT_CUBIC` | 6 | `easeCubicInOut` |
+| `EASE_IN_EXPO` | 7 | `easeExpIn` |
+| `EASE_OUT_EXPO` | 8 | `easeExpOut` |
+| `EASE_INOUT_EXPO` | 9 | `easeExpInOut` |
+
+### Shared scope pool
+
+Multiple `TweenAxisWasm` instances can share a single scope buffer so their PROC_WASM processes accumulate additively into the same slots.
 
 ```js
-TweenAxis.LineTypes.MyType = function(_scope, cfg, target) {
-  // Return a processor function:
-  return function(lastPos, update, scope, cfg, target, noEvents) {
-    // lastPos : normalized [0, 1] position before this update
-    // update  : normalized delta to apply
-    // scope   : target object
-  };
-};
-TweenAxis.LineTypes.MyType.isFactory = true;
+const scopeId = TweenAxis.createScope();
+axisA.attachScope(scopeId);
+axisB.attachScope(scopeId);
 
-// Use it in a descriptor:
-{ type: "MyType", from: 0, duration: 100, ... }
+TweenAxis.clearSharedScope(scopeId);
+axisA.goTo(posA);
+axisB.goTo(posB);
+
+const combined = TweenAxis.getSharedScopeValue(scopeId, 0);
+
+// When done:
+axisA.detachScope();
+axisB.detachScope();
+TweenAxis.destroyScope(scopeId);
 ```
 
-### Example: Event (side-effects only)
+### Context chaining (`PROC_CHILD`)
+
+A process in a parent axis can drive a child axis, executing the entire subtree inside one top-level `goTo()` with no JS involvement. The child must use PROC_WASM for all its processes.
 
 ```js
-TweenAxis.LineTypes.Event = function(_scope, cfg, target) {
-  return (lastPos, update, scope, cfg, target, noEvents) => {
-    if (!noEvents) {
-      if (cfg.entering && (lastPos === 0 || lastPos === 1)) cfg.entering(update);
-      if (cfg.moveTo) cfg.moveTo(lastPos + update, lastPos, update);
-      if (cfg.leaving && (lastPos + update === 0 || lastPos + update === 1)) cfg.leaving(update);
-    }
-  };
-};
-TweenAxis.LineTypes.Event.isFactory = true;
-
-// Usage:
-{ type: "Event", from: 40, duration: 60, entering: (d) => console.log("entered", d) }
-```
-
-### Example: SVGPath (animate along an SVG path)
-
-See [`doc/customTasks/SVGPath.js`](doc/customTasks/SVGPath.js) for a complete implementation that maps axis progress to `x`/`y` coordinates along an SVG path.
-
-```js
-{ type: "SVGPath", from: 0, duration: 100, path: "M 0 0 C 50 200 150 200 200 0", axes: ["x", "y"] }
-```
-
----
-
-## WASM variant
-
-`tween-axis` ships a drop-in WebAssembly replacement that offloads the core state machine. The WASM binary is base64-embedded at build time — no `fetch` or file-system access required at runtime. Supports up to 64 simultaneous instances via a pool of WASM contexts.
-
-```js
-import TweenAxisWasm from "tween-axis/dist/TweenAxisWasm";
-// Identical API to TweenAxis.
-// Call .destroy() when done to return the WASM context slot to the pool.
-```
-
----
-
-## Full example
-
-```js
-import TweenAxis from "tween-axis";
-// import * as D3Ease from "d3-ease";
-// TweenAxis.EasingFunctions = D3Ease;
-
-const axis = new TweenAxis([
-  {
-    target  : "box",
-    from    : 0,
-    duration: 100,
-    easeFn  : "easePolyOut",  // requires D3Ease assigned above
-    apply   : { x: 200, opacity: 1 }
-  },
-  {
-    target  : "box",
-    from    : 0,
-    duration: 100,
-    easeFn  : "easePolyIn",
-    apply   : { x: -100 }    // additive: net x delta at full progress = 100
-  },
-  {
-    from    : 40,
-    duration: 20,
-    entering: (delta) => console.log("segment entered, direction:", delta),
-    moving  : (newPos, prevPos, delta) => console.log("moving:", newPos),
-    leaving : (delta) => console.log("segment left, direction:", delta),
-  }
-]);
-
-const context = { box: { x: 0, opacity: 0 } };
-
-// Scrub forward
-axis.goTo(50, context);
-axis.goTo(25, context);
-axis.goTo(75, context);
-
-// Normalized scrub
-axis.go(0.5, context);   // same as goTo(50)
+parent.setProcessChild(key, childAxis);
+// Now parent.goTo() automatically advances childAxis
 ```
 
 ---
 
-## Build
+## Building
 
 ```bash
-npm run build       # full build: WASM + JS
-npm run build:wasm  # compile AssemblyScript → .wasm + embed as wasm-data.js
-npm run build:js    # Babel transpile only
-npm run bench       # performance benchmark
+# Full build: compile AssemblyScript → .wasm, embed as base64, then babel-transpile JS
+npm run build
+
+# AssemblyScript → .wasm only
+npm run build:wasm
+
+# Babel-transpile JS wrapper only
+npm run build:js
 ```
-
----
-
-## Used by
-
-- [**react-voodoo**](https://github.com/react-voodoo/react-voodoo) — React animation engine built on `tween-axis`; drives additive CSS animations, swipeable axes, and SSR-ready scroll-linked motion
 
 ---
 
 ## License
 
-[MIT](LICENSE)
+MIT
 
 ---
 
 ## Support
 
 BTC: `bc1qh43j8jh6dr8v3f675jwqq3nqymtsj8pyq0kh5a`
+
 PayPal: https://www.paypal.com/donate/?hosted_button_id=ECHYGKY3GR7CN

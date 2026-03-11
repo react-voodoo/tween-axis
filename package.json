@@ -1,16 +1,17 @@
 {
   "name": "tween-axis",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "license": "MIT",
   "author": "Nathan Braun <n8tz.js@gmail.com>",
   "description": "Fast, additive & delta based tween composition engine",
   "repository": "https://github.com/react-voodoo/tween-axis",
   "main": "dist/index.js",
   "scripts": {
-    "build:wasm": "asc src/assembly/TweenAxisCore.ts --outFile dist/TweenAxisCore.wasm --textFile dist/TweenAxisCore.wat --optimize --noAssert --runtime stub && node scripts/embed-wasm.js",
+    "build:wasm": "asc src/assembly/TweenAxisCore.ts --outFile dist/TweenAxisCore.wasm --textFile dist/TweenAxisCore.wat --optimize --noAssert --runtime stub --enable simd && node scripts/embed-wasm.js",
     "build:js": "babel src -d dist --ignore src/assembly",
     "build": "npm run build:wasm && npm run build:js",
-    "bench": "node bench/perf.js"
+    "bench": "node bench/perf.js",
+    "test": "node bench/test.js"
   },
   "devDependencies": {
     "@babel/cli": "^7.20.7",

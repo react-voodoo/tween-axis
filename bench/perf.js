@@ -108,6 +108,9 @@ function row(r, baseline) {
 	);
 }
 
+// Collect all results for the final recap
+const _recap = [];
+
 function compare(title, descriptor, positionsFn, calls = CALLS_PER_RUN) {
 	header(title);
 	const js   = bench("JS",   d => new TweenAxisJS(d),   descriptor, positionsFn, calls);
@@ -122,9 +125,9 @@ function compare(title, descriptor, positionsFn, calls = CALLS_PER_RUN) {
 	console.log("  " + "─".repeat(70));
 
 	const ratio = wasm.opsPS / js.opsPS;
-	const sign  = ratio >= 1 ? "+" : "";
 	console.log(`  WASM is ${ratio >= 1 ? ratio.toFixed(2) + "× FASTER" : (1 / ratio).toFixed(2) + "× SLOWER"} than JS  (median)`);
 
+	_recap.push({ title, js: js.opsPS, wasmResult: wasm.opsPS, wasmAccum: null });
 	return { js, wasm };
 }
 
@@ -263,6 +266,86 @@ compare(
 	i => [i % 100]
 );
 
+// ─── PROC_WASM benchmarks ─────────────────────────────────────────────────────
+// These use addWasmApply() so accumulation happens entirely inside WASM.
+// The goTo() hot loop makes 0 boundary crossings per active process.
+
+// ─── PROC_WASM benchmarks ─────────────────────────────────────────────────────
+// Processes registered with addWasmApply() accumulate entirely inside WASM.
+// goTo() makes 0 JS boundary crossings per active process.
+
+function benchWasmMode(label, descriptor, positionsFn, calls = CALLS_PER_RUN) {
+	const axis = new TweenAxisWasm(descriptor);
+
+	// Register WASM-side apply for each process key (keys assigned 1..N by mount())
+	const nProcs = axis.__cMaxKey - 1;
+	for ( let key = 1; key <= nProcs; key++ ) {
+		axis.addWasmApply(key, 0 /*slot*/, 1 /*value*/, TweenAxisWasm.EASE_LINEAR);
+	}
+
+	const scope = {};
+
+	for ( let i = 0; i < WARMUP; i++ ) {
+		axis.clearScope();
+		const positions = positionsFn(i);
+		for ( let p = 0; p < positions.length; p++ ) axis.goTo(positions[p], scope);
+		axis.goTo(0, scope, true);
+	}
+
+	const times = [];
+	for ( let r = 0; r < RUNS; r++ ) {
+		const start = performance.now();
+		for ( let i = 0; i < calls; i++ ) {
+			axis.clearScope();
+			const positions = positionsFn(i);
+			for ( let p = 0; p < positions.length; p++ ) axis.goTo(positions[p], scope);
+			axis.goTo(0, scope, true);
+		}
+		times.push(performance.now() - start);
+	}
+
+	const checksum = axis.getScopeValue(0);
+	const best  = Math.min(...times);
+	const med   = median(times);
+	const opsPS = (calls * RUNS * 1000) / times.reduce((a, b) => a + b, 0);
+	axis.destroy();
+	return { label, best, med, opsPS, checksum };
+}
+
+function compareWasmMode(title, descriptor, positionsFn, calls = CALLS_PER_RUN) {
+	header(title);
+	const resultR = bench("PROC_RESULT", d => new TweenAxisWasm(d), descriptor, positionsFn, calls);
+	const wasmR   = benchWasmMode("PROC_WASM", descriptor, positionsFn, calls);
+
+	console.log("  " + "─".repeat(70));
+	row(resultR);
+	row({ ...wasmR, jsOpsPS: resultR.opsPS });
+	console.log("  " + "─".repeat(70));
+	const ratio = wasmR.opsPS / resultR.opsPS;
+	console.log(`  PROC_WASM is ${ratio >= 1 ? ratio.toFixed(2) + "× FASTER" : (1/ratio).toFixed(2) + "× SLOWER"} than PROC_RESULT  (median)`);
+
+	// Strip "PROC_WASM | " prefix to find matching compare() entry
+	const baseTitle = title.replace(/^PROC_WASM \| /, "");
+	const existing  = _recap.find(r => r.title === baseTitle);
+	if (existing) {
+		existing.wasmAccum = wasmR.opsPS;
+	} else {
+		_recap.push({ title, js: null, wasmResult: resultR.opsPS, wasmAccum: wasmR.opsPS });
+	}
+}
+
+{
+	const d5 = Array.from({ length: 5 },  (_, i) => ({ from: i*10, duration: 50, apply: { x: 1 } }));
+	const d10 = Array.from({ length: 10 }, (_, i) => ({ from: i*10, duration: 50, apply: { x: 1 } }));
+	const d20 = Array.from({ length: 20 }, (_, i) => ({ from: i*10, duration: 50, apply: { x: 1 } }));
+	const d50 = Array.from({ length: 50 }, (_, i) => ({ from: i*10, duration: 20, apply: { x: 1 } }));
+
+	compareWasmMode("PROC_WASM | 5 overlapping processes | sweep",  d5,  i => [i % 110]);
+	compareWasmMode("PROC_WASM | 10 processes | same prop (x) | sweep", d10, i => [i % 110]);
+	compareWasmMode("PROC_WASM | 20 processes | sweep", d20, i => [i % 210]);
+	compareWasmMode("PROC_WASM | 50 processes | sweep", d50, i => [i % 510], 50_000);
+}
+
 // 8. WASM instantiation cost (one-time overhead)
 console.log("\n" + "═".repeat(72));
 console.log("  Instantiation cost (constructor + addProcess × 5)");
@@ -291,4 +374,39 @@ const wasmInst = (performance.now() - t0w);
 
 console.log(`  JS   ${N_INST.toLocaleString()} constructions: ${jsInst.toFixed(1)} ms  (${(N_INST / jsInst * 1000).toFixed(0)} instances/s)`);
 console.log(`  WASM ${N_INST.toLocaleString()} constructions: ${wasmInst.toFixed(1)} ms  (${(N_INST / wasmInst * 1000).toFixed(0)} instances/s)`);
+console.log();
+
+// ─── Recap table ──────────────────────────────────────────────────────────────
+
+console.log("\n" + "═".repeat(98));
+console.log("  RECAP — all scenarios (median throughput)");
+console.log("═".repeat(98));
+console.log(
+	"  " +
+	"Scenario".padEnd(44) +
+	"JS".padEnd(14) +
+	"WASM result".padEnd(14) +
+	"WASM accum".padEnd(14) +
+	"result÷JS" .padEnd(12) +
+	"accum÷JS"
+);
+console.log("  " + "─".repeat(96));
+
+for (const r of _recap) {
+	const jsStr     = r.js        ? (fmtOps(r.js)        + " ops/s").padEnd(14) : "—".padEnd(14);
+	const resStr    = r.wasmResult? (fmtOps(r.wasmResult) + " ops/s").padEnd(14) : "—".padEnd(14);
+	const accumStr  = r.wasmAccum ? (fmtOps(r.wasmAccum)  + " ops/s").padEnd(14) : "—".padEnd(14);
+	const resRatio  = (r.js && r.wasmResult) ? (r.wasmResult / r.js).toFixed(2) + "×" : "—";
+	const accumRatio= (r.js && r.wasmAccum)  ? (r.wasmAccum  / r.js).toFixed(2) + "×" : "—";
+	console.log(
+		"  " +
+		r.title.slice(0, 43).padEnd(44) +
+		jsStr +
+		resStr +
+		accumStr +
+		resRatio.padEnd(12) +
+		accumRatio
+	);
+}
+console.log("  " + "─".repeat(96));
 console.log();
